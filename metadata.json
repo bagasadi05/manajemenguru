@@ -1,0 +1,8 @@
+{
+  "name": "Manajemen Guru PWA",
+  "description": "A Progressive Web App for teachers to manage student attendance, progress reports, and schedules, with offline capabilities powered by Supabase.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}

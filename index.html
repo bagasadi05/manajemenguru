@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manajemen Guru</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap" rel="stylesheet">
+
+
+    <!-- Tailwind CSS Config -->
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Tinos', 'serif'],
+            },
+            animation: {
+              'fade-in-up': 'fade-in-up 0.6s ease-out both',
+              'fade-in': 'fade-in 0.5s ease-out both',
+              'shimmer': 'shimmer 4s infinite linear',
+              'slide-down': 'slide-down 1.2s cubic-bezier(0.25, 1, 0.5, 1) both',
+              'slide-up': 'slide-up 1.2s cubic-bezier(0.5, 0, 0.75, 0) both',
+              'float': 'float 4s ease-in-out infinite',
+              // Animations for new login page
+              'robot-entry': 'robotEntry 1s ease-out',
+              'robot-float': 'robotFloat 3s ease-in-out infinite',
+              'greeting-pop': 'greetingPop 0.5s ease-out backwards',
+              'blink': 'blink 3s infinite',
+              'wave': 'wave 2s ease-in-out infinite',
+              'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
+              'subtle-pop': 'subtle-pop 0.3s ease-out',
+              // Animation for task board
+              'pulse-border': 'pulse-border 1.5s ease-in-out infinite',
+            },
+            keyframes: {
+              'fade-in-up': {
+                'from': {
+                  opacity: '0',
+                  transform: 'translateY(20px)',
+                },
+                'to': {
+                  opacity: '1',
+                  transform: 'translateY(0)',
+                },
+              },
+              'fade-in': {
+                'from': {
+                  opacity: '0',
+                },
+                'to': {
+                  opacity: '1',
+                },
+              },
+              'shimmer': {
+                '0%': { 'background-position': '200% 0' },
+                '100%': { 'background-position': '-200% 0' },
+              },
+              'slide-down': {
+                'from': { transform: 'translateY(-120%)' },
+                'to': { transform: 'translateY(40px)' },
+              },
+              'slide-up': {
+                'from': { transform: 'translateY(40px)' },
+                'to': { transform: 'translateY(-120%)' },
+              },
+              'float': {
+                '0%, 100%': { transform: 'translateY(40px)' },
+                '50%': { transform: 'translateY(30px)' },
+              },
+              // Keyframes for new login page
+              robotEntry: {
+                '0%': { transform: 'translateX(-50%) translateY(-300px) rotate(360deg)' },
+                '100%': { transform: 'translateX(-50%) translateY(0) rotate(0deg)' }
+              },
+              robotFloat: {
+                '0%, 100%': { transform: 'translateY(0) rotateY(0deg)' },
+                '25%': { transform: 'translateY(-10px) rotateY(5deg)' },
+                '75%': { transform: 'translateY(-10px) rotateY(-5deg)' }
+              },
+              greetingPop: {
+                '0%': { transform: 'translateX(-50%) scale(0)' },
+                '50%': { transform: 'translateX(-50%) scale(1.2)' },
+                '100%': { transform: 'translateX(-50%) scale(1)' }
+              },
+              blink: {
+                '0%, 90%, 100%': { transform: 'scaleY(1)' },
+                '95%': { transform: 'scaleY(0.1)' }
+              },
+              wave: {
+                '0%, 100%': { transform: 'rotate(-20deg)' },
+                '50%': { transform: 'rotate(20deg)' }
+              },
+              'pulse-glow': {
+                '0%, 100%': { 'box-shadow': '0 0 0 0 rgba(59, 130, 246, 0.4)' },
+                '70%': { 'box-shadow': '0 0 0 10px rgba(59, 130, 246, 0)' }
+              },
+              'subtle-pop': {
+                '0%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.05)' },
+                '100%': { transform: 'scale(1)' }
+              },
+              'pulse-border': {
+                '0%, 100%': { 'border-color': 'rgba(59, 130, 246, 0.4)' },
+                '50%': { 'border-color': 'rgba(59, 130, 246, 1)' }
+              },
+            },
+          }
+        }
+      }
+    </script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.4"></script>
+
+    <!-- PWA Manifest & Mobile Meta -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#4f46e5" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Guru PWA" />
+    
+    <style>
+      .animation-delay-100 { animation-delay: 100ms; }
+      .animation-delay-200 { animation-delay: 200ms; }
+      .animation-delay-300 { animation-delay: 300ms; }
+      .animation-delay-400 { animation-delay: 400ms; }
+      .animation-delay-2000 {
+        animation-delay: 2s;
+      }
+      .animation-delay-4000 {
+        animation-delay: 4s;
+      }
+      .text-shadow-md {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+      .dark body {
+        background-image: radial-gradient(circle at 25% 25%, rgba(109, 40, 217, 0.07), transparent 50%), radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.07), transparent 50%);
+      }
+
+      /* Styles for new Login Page */
+      .login-page-bg {
+          font-family: 'Arial', sans-serif;
+          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          position: relative;
+      }
+
+      .particles {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: 1;
+      }
+
+      .particle {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: 50%;
+          animation: particle-float 15s infinite;
+      }
+
+      @keyframes particle-float {
+          0% {
+              transform: translateY(100vh) translateX(0);
+              opacity: 0;
+          }
+          10% {
+              opacity: 1;
+          }
+          90% {
+              opacity: 1;
+          }
+          100% {
+              transform: translateY(-100px) translateX(var(--x-end));
+          }
+      }
+
+      .login-container {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 30px;
+          padding: 80px 40px 60px;
+          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          width: 100%;
+          max-width: 400px;
+          position: relative;
+          z-index: 10;
+          transition: transform 0.3s ease, height 0.4s ease-in-out;
+      }
+
+      .login-container:hover {
+          transform: translateY(-5px);
+      }
+      
+      .robot-container {
+          position: absolute;
+          top: -90px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 150px;
+          height: 150px;
+          animation: robotEntry 1s ease-out;
+      }
+
+      .robot {
+          width: 100%;
+          height: 100%;
+          position: relative;
+          transform-style: preserve-3d;
+          animation: robotFloat 3s ease-in-out infinite;
+      }
+
+      .robot-head {
+          width: 80px;
+          height: 80px;
+          background: linear-gradient(135deg, #60a5fa, #a78bfa);
+          border-radius: 20px;
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .robot-eye {
+          width: 15px;
+          height: 15px;
+          background: #fff;
+          border-radius: 50%;
+          position: absolute;
+          top: 30px;
+          animation: blink 3s infinite;
+          box-shadow: 0 0 5px #22d3ee;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .robot-eye.left {
+          left: 20px;
+      }
+
+      .robot-eye.right {
+          right: 20px;
+      }
+      
+      .robot-pupil {
+        width: 7px;
+        height: 7px;
+        background: #333;
+        border-radius: 50%;
+        transition: transform 0.1s ease-out;
+      }
+
+      .robot-mouth {
+          width: 30px;
+          height: 10px;
+          background: #333;
+          border-radius: 0 0 15px 15px;
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+      }
+
+      .robot-body {
+          width: 100px;
+          height: 60px;
+          background: linear-gradient(135deg, #4f46e5, #3730a3);
+          border-radius: 20px;
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      }
+      
+      .robot-arm {
+          width: 15px;
+          height: 40px;
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          border-radius: 10px;
+          position: absolute;
+          bottom: 10px;
+          animation: wave 2s ease-in-out infinite;
+      }
+
+      .robot-arm.left {
+          left: 10px;
+          transform-origin: top center;
+      }
+
+      .robot-arm.right {
+          right: 10px;
+          transform-origin: top center;
+          animation-delay: 1s;
+      }
+
+      @keyframes wave {
+          0%, 100% {
+              transform: rotate(-20deg);
+          }
+          50% {
+              transform: rotate(20deg);
+          }
+      }
+
+      .greeting {
+          position: absolute;
+          top: -120px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: linear-gradient(135deg, #60a5fa, #a78bfa);
+          color: white;
+          padding: 10px 20px;
+          border-radius: 20px;
+          font-size: 14px;
+          animation: greetingPop 0.5s ease-out 1s backwards;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+          white-space: nowrap;
+      }
+
+      .login-title {
+          color: white;
+          text-align: center;
+          margin-top: 0;
+          margin-bottom: 10px;
+          font-size: 28px;
+          font-weight: bold;
+          background: linear-gradient(135deg, #818cf8, #a78bfa);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+      }
+
+      .login-subtitle {
+          color: rgba(255, 255, 255, 0.7);
+          text-align: center;
+          margin-bottom: 40px;
+          font-size: 16px;
+      }
+
+      .form-group {
+          margin-bottom: 25px;
+          position: relative;
+      }
+
+      .form-group label {
+          display: block;
+          color: white;
+          margin-bottom: 8px;
+          font-size: 14px;
+      }
+
+      .form-group input {
+          width: 100%;
+          padding: 15px;
+          border: none;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          font-size: 16px;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(5px);
+      }
+
+      .form-group input::placeholder {
+          color: rgba(255, 255, 255, 0.5);
+      }
+
+      .form-group input:focus {
+          outline: none;
+          background: rgba(255, 255, 255, 0.2);
+          box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+          transform: translateY(-2px);
+      }
+      
+      .login-btn {
+          width: 100%;
+          padding: 15px;
+          border: none;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          color: white;
+          font-size: 18px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+      }
+
+      .login-btn:hover:not(:disabled) {
+          transform: translateY(-3px);
+          box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+      }
+      
+      .login-btn:disabled {
+        cursor: not-allowed;
+        background: gray;
+      }
+
+      .login-btn:active:not(:disabled) {
+          transform: translateY(-1px);
+      }
+      
+      .login-links {
+          text-align: center;
+          margin-top: 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+
+      .login-links a, .login-links button {
+          color: rgba(255, 255, 255, 0.7);
+          text-decoration: none;
+          font-size: 14px;
+          transition: color 0.3s ease;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+      }
+
+      .login-links a:hover, .login-links button:hover {
+          color: white;
+      }
+
+      @media (max-width: 480px) {
+          .login-container {
+              margin: 20px;
+              padding: 40px 30px;
+              padding-top: 80px;
+          }
+      }
+      .form-radio {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        display: inline-block;
+        width: 1.25em;
+        height: 1.25em;
+        padding: 0.15em;
+        background-clip: content-box;
+        border: 2px solid #9ca3af;
+        border-radius: 50%;
+        transition: all 0.2s ease-in-out;
+      }
+      .form-radio:checked {
+        border-color: #4f46e5;
+        background-color: #4f46e5;
+      }
+      .dark .form-radio {
+        border-color: #6b7280;
+      }
+      .dark .form-radio:checked {
+        border-color: #818cf8;
+        background-color: #818cf8;
+      }
+      @media print {
+        html, body {
+          background-color: #fff !important;
+          color: #000 !important;
+          font-family: Tinos, serif !important;
+        }
+        .print\:hidden {
+          display: none !important;
+        }
+        #report-card {
+          box-shadow: none !important;
+          margin: 0 !important;
+          border: none !important;
+          break-inside: avoid;
+        }
+        #report-card input,
+        #report-card textarea,
+        #report-card [contenteditable="true"] {
+          border: 1px solid transparent !important;
+          background-color: transparent !important;
+          box-shadow: none !important;
+          appearance: none !important;
+          -webkit-appearance: none !important;
+          -moz-appearance: none !important;
+          padding: 2px 1px !important;
+          margin: 0 !important;
+          width: 100%;
+          font-family: inherit !important;
+          font-size: inherit !important;
+          color: black !important;
+          line-height: 1.4;
+        }
+        #report-card textarea {
+          resize: none !important;
+          overflow: visible !important;
+          display: block;
+          height: auto !important;
+          min-height: 20px !important;
+        }
+        #report-card [contenteditable="true"]:focus,
+        #report-card input:focus,
+        #report-card textarea:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        tr, section {
+          break-inside: avoid !important;
+        }
+        thead {
+          display: table-header-group !important;
+        }
+      }
+      @page {
+        size: A4;
+        margin: 20mm;
+      }
+    </style>
+    <script>
+      // Theme management script to prevent flash of wrong theme
+      if (localStorage.getItem('theme') === 'dark' || (!('theme'in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.7.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.51.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.10.0",
+    "jspdf": "https://esm.sh/jspdf@^3.0.1",
+    "jspdf-autotable": "https://esm.sh/jspdf-autotable@^5.0.2",
+    "ics": "https://esm.sh/ics@^3.8.1",
+    "react-dom": "https://esm.sh/react-dom@^19.1.0",
+    "@tanstack/react-query": "https://esm.sh/@tanstack/react-query@^5.51.1",
+    "@/": "./",
+    "@tanstack/query-core": "https://esm.sh/@tanstack/query-core@^5.83.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100 dark:bg-gray-950 font-sans">
+    <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

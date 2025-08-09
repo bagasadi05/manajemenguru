@@ -11,12 +11,30 @@ import { Database } from '../../services/database.types';
 import { useQuery } from '@tanstack/react-query';
 import { Modal } from '../ui/Modal';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 type ReportWithStudent = { student_id: string, students: { name: string } | null };
 type DashboardWeeklyAttendance = { day: string, present_percentage: number }[];
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
 type DailyAttendanceRecord = { student_id: string, status: string, students: { name: string, avatar_url: string } | null };
+
+interface AttendanceStats {
+    Hadir: number;
+    Izin: number;
+    Sakit: number;
+    Alpha: number;
+}
+
+interface InsightItem {
+    student_name: string;
+    reason: string;
+}
+
+interface AiInsight {
+    to_praise: InsightItem[];
+    needs_attention: InsightItem[];
+    class_focus: { title: string; suggestion: string };
+}
 
 type DashboardQueryData = {
     students: Pick<Database['public']['Tables']['students']['Row'], 'id' | 'name' | 'gender'>[];
@@ -57,12 +75,12 @@ const AiInsightSkeleton = () => (
 );
 
 const AiDashboardInsight: React.FC<{ 
-    students: Pick<Database['public']['Tables']['students']['Row'], 'id' | 'name'>[], 
-    attendance: any, 
+    students: Pick<Database['public']['Tables']['students']['Row'], 'id' | 'name'>[],
+    attendance: AttendanceStats,
     academicRecords: Pick<Database['public']['Tables']['academic_records']['Row'], 'student_id' | 'score'>[],
     violations: Pick<Database['public']['Tables']['violations']['Row'], 'student_id' | 'points'>[]
 }> = ({ students, attendance, academicRecords, violations }) => {
-    const [insight, setInsight] = useState<any | null>(null);
+    const [insight, setInsight] = useState<AiInsight | null>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -177,7 +195,7 @@ const AiDashboardInsight: React.FC<{
                     <>
                         {insight.to_praise && insight.to_praise.length > 0 && (
                             <InsightSection icon={CheckCircleIcon} title="Siswa Berprestasi" color="green">
-                                {insight.to_praise.map((item: any, index: number) => {
+                                {insight.to_praise.map((item: InsightItem, index: number) => {
                                     const studentId = studentMap.get(item.student_name);
                                     return <p key={index}><Link to={studentId ? `/siswa/${studentId}` : '#'} className="font-bold hover:underline">{item.student_name}</Link>: {item.reason}</p>;
                                 })}
@@ -185,7 +203,7 @@ const AiDashboardInsight: React.FC<{
                         )}
                         {insight.needs_attention && insight.needs_attention.length > 0 && (
                              <InsightSection icon={AlertTriangleIcon} title="Perlu Perhatian" color="yellow">
-                                {insight.needs_attention.map((item: any, index: number) => {
+                                {insight.needs_attention.map((item: InsightItem, index: number) => {
                                     const studentId = studentMap.get(item.student_name);
                                     return (
                                         <div key={index} className="flex justify-between items-center gap-2">
@@ -356,7 +374,7 @@ const InteractiveStatCard: React.FC<{
     label: string;
     value: number | string;
     details: React.ReactNode;
-    icon: React.FC<any>;
+    icon: React.FC<React.SVGProps<SVGSVGElement>>;
 }> = ({ link, color, shadow, label, value, details, icon: Icon }) => {
     return (
         <Link to={link} className="block group h-full relative">
@@ -406,9 +424,11 @@ const DashboardPage: React.FC = () => {
 
     const todaySchedule = useMemo(() => {
         if (!dashboardData?.schedule) return [];
-        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const today = dayNames[new Date().getDay()] as any;
-        return dashboardData.schedule.filter(item => item.day === today).sort((a,b) => a.start_time.localeCompare(b.start_time));
+        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'] as const;
+        const today = dayNames[new Date().getDay()];
+        return dashboardData.schedule
+            .filter(item => item.day === today)
+            .sort((a, b) => a.start_time.localeCompare(b.start_time));
     }, [dashboardData?.schedule]);
 
     const getScheduleStatus = (startTimeStr: string, endTimeStr: string): ScheduleStatus => {
@@ -459,7 +479,15 @@ const DashboardPage: React.FC = () => {
                         <CardContent className="flex-grow flex items-center justify-center p-4">
                             <div className="grid grid-cols-2 items-center gap-6 w-full">
                                 <div className="flex justify-center"><DonutChart data={dailyAttendanceSummary} onClick={handleDonutClick} /></div>
-                                <div className="space-y-2 text-sm">{Object.entries(dailyAttendanceSummary).map(([key, value]: [string, any]) => (<div key={key} className="flex items-center justify-between gap-2"><div className="flex items-center"><span className={`w-2 h-2 rounded-full mr-2 ${{Hadir: 'bg-green-500', Izin: 'bg-yellow-500', Sakit: 'bg-blue-500', Alpha: 'bg-red-500'}[key]}`}></span><span className="text-gray-600 dark:text-gray-400">{key}</span></div><span className="font-semibold text-gray-800 dark:text-gray-200">{value}%</span></div>))}</div>
+                                <div className="space-y-2 text-sm">{Object.entries(dailyAttendanceSummary).map(([key, value]: [keyof AttendanceStats, number]) => (
+                                    <div key={key} className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center">
+                                            <span className={`w-2 h-2 rounded-full mr-2 ${{Hadir: 'bg-green-500', Izin: 'bg-yellow-500', Sakit: 'bg-blue-500', Alpha: 'bg-red-500'}[key]}`}></span>
+                                            <span className="text-gray-600 dark:text-gray-400">{key}</span>
+                                        </div>
+                                        <span className="font-semibold text-gray-800 dark:text-gray-200">{value}%</span>
+                                    </div>
+                                ))}</div>
                             </div>
                         </CardContent>
                     </Card>

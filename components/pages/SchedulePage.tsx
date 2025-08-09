@@ -12,7 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOfflineStatus } from '../../hooks/useOfflineStatus';
 import jsPDF from 'jspdf';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const daysOfWeek: Database['public']['Tables']['schedules']['Row']['day'][] = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 type ScheduleRow = Database['public']['Tables']['schedules']['Row'];

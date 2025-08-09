@@ -1,6 +1,6 @@
 
 import React, { lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
@@ -66,37 +66,37 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <AuthProvider>
+          <ThemeProvider>
             <ToastProvider>
-              <Suspense fallback={loadingSpinner}>
-                <HashRouter>
-                  <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    
-                    <Route element={<PrivateRoutes />}>
-                      <Route path="/" element={<DashboardPage />} />
-                      <Route path="/absensi" element={<AttendancePage />} />
-                      <Route path="/siswa" element={<StudentsPage />} />
-                      <Route path="/siswa/:studentId" element={<StudentDetailPage />} />
-                      <Route path="/jadwal" element={<SchedulePage />} />
-                      <Route path="/pengaturan" element={<SettingsPage />} />
-                      <Route path="/tugas" element={<TasksPage />} />
-                      <Route path="/input-massal" element={<MassInputPage />} />
-                    </Route>
-                    
-                    {/* Report page has no main layout */}
-                    <Route path="/cetak-rapot/:studentId" element={<ReportPage />} />
+              <AuthProvider>
+                <Suspense fallback={loadingSpinner}>
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/login" element={<LoginPage />} />
 
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </HashRouter>
-              </Suspense>
-              <PwaPrompt />
-              <OfflineBanner />
+                      <Route element={<PrivateRoutes />}>
+                        <Route path="/" element={<DashboardPage />} />
+                        <Route path="/absensi" element={<AttendancePage />} />
+                        <Route path="/siswa" element={<StudentsPage />} />
+                        <Route path="/siswa/:studentId" element={<StudentDetailPage />} />
+                        <Route path="/jadwal" element={<SchedulePage />} />
+                        <Route path="/pengaturan" element={<SettingsPage />} />
+                        <Route path="/tugas" element={<TasksPage />} />
+                        <Route path="/input-massal" element={<MassInputPage />} />
+                      </Route>
+
+                      {/* Report page has no main layout */}
+                      <Route path="/cetak-rapot/:studentId" element={<ReportPage />} />
+
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </BrowserRouter>
+                </Suspense>
+                <PwaPrompt />
+                <OfflineBanner />
+              </AuthProvider>
             </ToastProvider>
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

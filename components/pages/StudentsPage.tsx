@@ -23,7 +23,7 @@ type StudentsPageData = {
     students: StudentRow[];
 };
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const gradientPalettes = [
     'from-violet-500 to-purple-600', 'from-sky-500 to-indigo-600',

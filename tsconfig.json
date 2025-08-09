@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -17,9 +16,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "paths": {"@/*": ["./*"]},
+    "types": ["vitest"]
   },
   "include": ["."],
   "references": [{ "path": "./tsconfig.node.json" }]

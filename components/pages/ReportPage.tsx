@@ -31,7 +31,7 @@ type ReportData = {
     quizPoints: QuizPointRow[],
 };
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const fetchReportData = async (studentId: string | undefined, userId: string): Promise<ReportData> => {
     if (!studentId) throw new Error("Student ID is required.");

@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase';
 // Re-introduce Session and User types from Supabase v2 for type safety.
 import type { Session, User } from '@supabase/supabase-js';
 import type { Database } from '../services/database.types';
+import { useToast } from './useToast';
 
 interface AppUser {
   id: string;
@@ -30,10 +31,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [session, setSession] = useState<Session | null>(null);
+    const [user, setUser] = useState<AppUser | null>(null);
+    const [loading, setLoading] = useState(true);
+    const toast = useToast();
 
   // Centralized function to process user data and apply cache-busting
   const processUser = (authUser: User | undefined): AppUser | null => {
@@ -119,17 +121,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const enableScheduleNotifications = async (schedule: ScheduleWithClassName[]): Promise<boolean> => {
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-          alert('Browser Anda tidak mendukung notifikasi.');
-          return false;
-      }
+    const enableScheduleNotifications = async (schedule: ScheduleWithClassName[]): Promise<boolean> => {
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            toast.error('Browser Anda tidak mendukung notifikasi.');
+            return false;
+        }
 
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-          alert('Izin notifikasi tidak diberikan.');
-          return false;
-      }
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            toast.warning('Izin notifikasi tidak diberikan.');
+            return false;
+        }
       
       const registration = await setupServiceWorker();
       if (registration && registration.active) {

@@ -19,7 +19,7 @@ type Message = {
     text: string;
 };
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const fetchAppContextData = async (userId: string) => {
     const today = new Date().toISOString().split('T')[0];

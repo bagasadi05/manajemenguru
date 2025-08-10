@@ -1,0 +1,50 @@
+/*
+  Shared animation utilities and keyframes used across components.
+  Includes delay classes and common effects like fade and slide.
+*/
+
+/* Animation delay utilities */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+/* Faster pulse animation used in chat typing indicator */
+@keyframes pulse-fast {
+  50% { opacity: .5; }
+}
+.animate-pulse-fast { animation: pulse-fast 0.5s cubic-bezier(0.4,0,0.6,1) infinite; }
+
+/* Keyframes */
+@keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes slide-down { from { transform: translateY(-120%); } to { transform: translateY(40px); } }
+@keyframes slide-up { from { transform: translateY(40px); } to { transform: translateY(-120%); } }
+@keyframes float { 0%,100% { transform: translateY(40px); } 50% { transform: translateY(30px); } }
+@keyframes robotEntry { 0% { transform: translateX(-50%) translateY(-300px) rotate(360deg); } 100% { transform: translateX(-50%) translateY(0) rotate(0deg); } }
+@keyframes robotFloat { 0%,100% { transform: translateY(0) rotateY(0deg); } 25% { transform: translateY(-10px) rotateY(5deg); } 75% { transform: translateY(-10px) rotateY(-5deg); } }
+@keyframes greetingPop { 0% { transform: translateX(-50%) scale(0); } 50% { transform: translateX(-50%) scale(1.2); } 100% { transform: translateX(-50%) scale(1); } }
+@keyframes blink { 0%,90%,100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes wave { 0%,100% { transform: rotate(-20deg); } 50% { transform: rotate(20deg); } }
+@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); } 70% { box-shadow: 0 0 0 10px rgba(59,130,246,0); } }
+@keyframes subtle-pop { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes pulse-border { 0%,100% { border-color: rgba(59,130,246,0.4); } 50% { border-color: rgba(59,130,246,1); } }
+
+/* Animation utilities */
+.animate-fade-in-up { animation: fade-in-up 0.6s ease-out both; }
+.animate-fade-in { animation: fade-in 0.5s ease-out both; }
+.animate-shimmer { animation: shimmer 4s infinite linear; background-size: 400% 100%; }
+.animate-slide-down { animation: slide-down 1.2s cubic-bezier(0.25,1,0.5,1) both; }
+.animate-slide-up { animation: slide-up 1.2s cubic-bezier(0.5,0,0.75,0) both; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-robot-entry { animation: robotEntry 1s ease-out; }
+.animate-robot-float { animation: robotFloat 3s ease-in-out infinite; }
+.animate-greeting-pop { animation: greetingPop 0.5s ease-out backwards; }
+.animate-blink { animation: blink 3s infinite; }
+.animate-wave { animation: wave 2s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s infinite ease-in-out; }
+.animate-subtle-pop { animation: subtle-pop 0.3s ease-out; }
+.animate-pulse-border { animation: pulse-border 1.5s ease-in-out infinite; }

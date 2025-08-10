@@ -155,13 +155,16 @@ const LoginPage: React.FC = () => {
 
   return (
     <>
-        <div className="login-page-bg">
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-600">
             <div className="particles">
                 {particles.map(p => <div key={p.id} className="particle" style={p.style} />)}
             </div>
-            
-            <div className="login-container" style={{ paddingTop: isLoginMode ? '60px' : '80px' }}>
-                <div className="greeting" key={greeting}>{greeting}</div>
+
+            <div
+              className="relative z-10 w-full max-w-md rounded-[30px] border border-white/20 bg-white/10 px-10 pb-[60px] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-lg transition-transform duration-300 hover:-translate-y-1 max-[480px]:m-5 max-[480px]:px-8 max-[480px]:pb-10"
+              style={{ paddingTop: isLoginMode ? '60px' : '80px' }}
+            >
+                <div className="greeting animate-greeting-pop" key={greeting} style={{ animationDelay: '1s' }}>{greeting}</div>
                 <div className="robot-container">
                     <div ref={robotRef} className="robot">
                         <div className="robot-head">
@@ -179,55 +182,99 @@ const LoginPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                
-                <h1 className="login-title">{isLoginMode ? 'Manajemen Guru' : 'Buat Akun Baru'}</h1>
-                <p className="login-subtitle">
+                <h1 className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-center text-3xl font-bold text-transparent mb-2">
+                  {isLoginMode ? 'Manajemen Guru' : 'Buat Akun Baru'}
+                </h1>
+                <p className="mb-10 text-center text-white/70">
                   {isLoginMode ? 'Masuk untuk mengelola siswa dan jadwal' : 'Isi formulir untuk mendaftar.'}
                 </p>
-                
+
                 <form onSubmit={handleSubmit}>
                     {!isLoginMode && (
-                        <div className="form-group">
-                            <label htmlFor="full-name">Nama Lengkap</label>
-                            <input type="text" id="full-name" placeholder="Masukkan nama lengkap" required value={name} onChange={e => setName(e.target.value)} />
+                        <div className="mb-6 text-left">
+                            <label htmlFor="full-name" className="mb-2 block text-sm text-white">Nama Lengkap</label>
+                            <input
+                              type="text"
+                              id="full-name"
+                              placeholder="Masukkan nama lengkap"
+                              required
+                              value={name}
+                              onChange={e => setName(e.target.value)}
+                              className="w-full rounded-xl border-none bg-white/10 px-4 py-3 text-white placeholder-white/50 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:shadow-[0_0_20px_rgba(99,102,241,0.3)] focus:-translate-y-0.5 focus:outline-none"
+                            />
                         </div>
                     )}
-                    
-                    <div className="form-group">
-                        <label htmlFor="email-address">Email</label>
-                        <input type="email" id="email-address" placeholder="Masukkan email" required value={email} onChange={e => setEmail(e.target.value)} />
+
+                    <div className="mb-6 text-left">
+                        <label htmlFor="email-address" className="mb-2 block text-sm text-white">Email</label>
+                        <input
+                          type="email"
+                          id="email-address"
+                          placeholder="Masukkan email"
+                          required
+                          value={email}
+                          onChange={e => setEmail(e.target.value)}
+                          className="w-full rounded-xl border-none bg-white/10 px-4 py-3 text-white placeholder-white/50 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:shadow-[0_0_20px_rgba(99,102,241,0.3)] focus:-translate-y-0.5 focus:outline-none"
+                        />
                     </div>
-                    
-                    <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <input type="password" id="password" placeholder="Masukkan password" required value={password} onChange={e => setPassword(e.target.value)} />
+
+                    <div className="mb-6 text-left">
+                        <label htmlFor="password" className="mb-2 block text-sm text-white">Password</label>
+                        <input
+                          type="password"
+                          id="password"
+                          placeholder="Masukkan password"
+                          required
+                          value={password}
+                          onChange={e => setPassword(e.target.value)}
+                          className="w-full rounded-xl border-none bg-white/10 px-4 py-3 text-white placeholder-white/50 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:shadow-[0_0_20px_rgba(99,102,241,0.3)] focus:-translate-y-0.5 focus:outline-none"
+                        />
                     </div>
-                    
+
                     {!isLoginMode && (
-                        <div className="form-group">
-                            <label htmlFor="confirm-password">Konfirmasi Password</label>
-                            <input type="password" id="confirm-password" placeholder="Ulangi password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                        <div className="mb-6 text-left">
+                            <label htmlFor="confirm-password" className="mb-2 block text-sm text-white">Konfirmasi Password</label>
+                            <input
+                              type="password"
+                              id="confirm-password"
+                              placeholder="Ulangi password"
+                              required
+                              value={confirmPassword}
+                              onChange={e => setConfirmPassword(e.target.value)}
+                              className="w-full rounded-xl border-none bg-white/10 px-4 py-3 text-white placeholder-white/50 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:shadow-[0_0_20px_rgba(99,102,241,0.3)] focus:-translate-y-0.5 focus:outline-none"
+                            />
                         </div>
                     )}
-                    
+
                     {error && (
-                        <p className="text-center text-sm text-yellow-300 mb-4">{error}</p>
+                        <p className="mb-4 text-center text-sm text-yellow-300">{error}</p>
                     )}
-                    
-                    <button type="submit" className="login-btn" disabled={loading}>
+
+                    <button
+                      type="submit"
+                      className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 font-bold text-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-400"
+                      disabled={loading}
+                    >
                         {loading ? 'Memproses...' : (isLoginMode ? 'Masuk' : 'Daftar')}
                     </button>
                 </form>
-                
-                <div className="login-links">
-                    <button type="button" onClick={() => {
+
+                <div className="mt-5 flex items-center justify-between text-sm text-white/70">
+                    <button
+                      type="button"
+                      className="bg-transparent p-0 text-white/70 transition-colors hover:text-white"
+                      onClick={() => {
                       setFormMode(isLoginMode ? 'signup' : 'login');
                       setError(null);
                       setEmail(''); setPassword(''); setName(''); setConfirmPassword('');
                     }}>
                         {isLoginMode ? 'Belum punya akun?' : 'Sudah punya akun?'}
                     </button>
-                    <button type="button" onClick={() => setIsForgotModalOpen(true)}>Lupa password?</button>
+                    <button
+                      type="button"
+                      className="bg-transparent p-0 text-white/70 transition-colors hover:text-white"
+                      onClick={() => setIsForgotModalOpen(true)}
+                    >Lupa password?</button>
                 </div>
             </div>
         </div>

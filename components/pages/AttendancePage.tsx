@@ -226,7 +226,7 @@ const AttendancePage: React.FC = () => {
             const responseSchema = { type: Type.OBJECT, properties: { perfect_attendance: { type: Type.ARRAY, description: "Nama siswa dengan kehadiran 100% (tidak ada Izin, Sakit, atau Alpha).", items: { type: Type.STRING } }, frequent_absentees: { type: Type.ARRAY, description: "Siswa dengan 3 atau lebih status 'Alpha'.", items: { type: Type.OBJECT, properties: { student_name: { type: Type.STRING }, absent_days: { type: Type.NUMBER } } } }, pattern_warnings: { type: Type.ARRAY, description: "Pola absensi yang tidak biasa atau mengkhawatirkan.", items: { type: Type.OBJECT, properties: { pattern_description: { type: Type.STRING, description: "cth., 'Tingkat absensi (Alpha) tinggi pada hari Senin.'" }, implicated_students: { type: Type.ARRAY, description: "Siswa yang terkait dengan pola ini.", items: { type: Type.STRING } } } } } } };
 
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction, responseMimeType: "application/json", responseSchema } });
-            setAiAnalysisResult(JSON.parse(response.text));
+            setAiAnalysisResult(JSON.parse(response.text ?? ''));
         } catch (err: any) {
             toast.error("Gagal menganalisis data kehadiran.");
             console.error(err);

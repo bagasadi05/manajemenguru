@@ -133,7 +133,7 @@ const AiDashboardInsight: React.FC<{
                     config: { systemInstruction, responseMimeType: "application/json", responseSchema, },
                 });
 
-                setInsight(JSON.parse(response.text));
+                setInsight(JSON.parse(response.text ?? ''));
 
             } catch (error) {
                 console.error("Failed to generate AI insight:", error);
@@ -362,13 +362,15 @@ const fetchDashboardData = async (userId: string): Promise<DashboardQueryData> =
         Alpha: dailySummaryData?.absent_percentage ?? 0,
     };
 
-    const safeReports = (reportsRes.data || []).filter((r: ReportWithStudent): r is ReportWithStudent & { students: { name: string } } => !!r.students);
+    const safeReports = ((reportsRes.data || []) as unknown as ReportWithStudent[]).filter(
+        (r): r is ReportWithStudent & { students: { name: string } } => !!r.students
+    );
     
     return {
         students: studentsRes.data || [],
         schedule: scheduleRes.data || [],
         dailyAttendanceSummary,
-        dailyAttendanceRecords: (dailyAttendanceRecordsRes.data || []) as DailyAttendanceRecord[],
+        dailyAttendanceRecords: (dailyAttendanceRecordsRes.data || []) as unknown as DailyAttendanceRecord[],
         weeklyAttendance: weeklyAttendanceRes.data || [],
         classCount: (classesRes.data || []).length,
         newReportsCount: safeReports.length,

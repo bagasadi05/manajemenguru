@@ -465,7 +465,7 @@ const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: Attendanc
             `;
 
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction } });
-            setAnalysis(response.text);
+            setAnalysis(response.text ?? '');
         } catch (error) {
             console.error(error);
             setAnalysis("Gagal memuat analisis perilaku. Silakan coba lagi.");
@@ -671,7 +671,7 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
                 }
             });
             
-            const summaryContent = JSON.parse(response.text);
+            const summaryContent = JSON.parse(response.text ?? '');
             setAiSummaryState({ loading: false, error: null, content: summaryContent });
             setEditableAiSummary(summaryContent);
             return summaryContent;
@@ -958,8 +958,8 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
         e.preventDefault();
         const editingReport = modalState.type === 'report' ? modalState.data : null;
         const formData = new FormData(e.currentTarget);
-        const payload: Omit<ReportRow, 'created_at'> & {id?: string} = {
-            id: editingReport?.id, title: formData.get('title') as string, notes: formData.get('notes') as string,
+        const payload: Omit<ReportRow, 'created_at' | 'id'> & { id?: string } = {
+            id: editingReport?.id ?? undefined, title: formData.get('title') as string, notes: formData.get('notes') as string,
             attachment_url: editingReport?.attachment_url || null, date: editingReport?.date || getLocalDateString(),
             student_id: studentId!, user_id: user!.id,
         };

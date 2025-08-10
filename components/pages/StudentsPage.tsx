@@ -250,7 +250,7 @@ const StudentsPage: React.FC = () => {
 
         try {
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction } });
-            setAiResponse(response.text);
+            setAiResponse(response.text ?? '');
         } catch (error) {
             console.error("AI Assistant Error:", error);
             setAiResponse("Maaf, terjadi kesalahan saat memproses permintaan Anda.");

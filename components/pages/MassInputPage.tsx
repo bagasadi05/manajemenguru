@@ -96,8 +96,11 @@ const MassInputPage: React.FC = () => {
     const handleModeSelect = (selectedMode: InputMode) => { setMode(selectedMode); setStep(2); };
     const handleBack = () => { setStep(1); setSelectedClass(classes?.[0]?.id || ''); };
     
-    const handleInfoChange = (setter: React.Dispatch<React.SetStateAction<any>>, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setter(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleInfoChange = <T extends Record<string, any>>(
+        setter: React.Dispatch<React.SetStateAction<T>>,
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        setter((prev: T) => ({ ...prev, [e.target.name]: e.target.value }) as T);
     };
     const handleScoreChange = (studentId: string, value: string) => setScores(prev => ({ ...prev, [studentId]: value }));
 
@@ -134,7 +137,7 @@ const MassInputPage: React.FC = () => {
                 config: { systemInstruction, responseMimeType: "application/json", responseSchema } 
             });
             
-            const parsedScores: Record<string, number> = JSON.parse(response.text);
+            const parsedScores: Record<string, number> = JSON.parse(response.text ?? '');
             const studentMapByName = new Map(students.map(s => [s.name, s.id]));
             
             let updatedCount = 0;

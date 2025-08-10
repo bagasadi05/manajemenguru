@@ -218,7 +218,7 @@ const ReportPage: React.FC = () => {
             `;
 
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction }});
-            setTeacherNote(response.text.replace(/\\n/g, ' '));
+            setTeacherNote((response.text ?? '').replace(/\\n/g, ' '));
             if (showToast) {
                 toast.success("Catatan guru berhasil dibuat oleh AI!");
             }

@@ -88,7 +88,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ isOpen, setIsO
 
         try {
             const response = await chat.sendMessage({ message: contextPrompt });
-            const modelMessage: Message = { role: 'model', text: response.text };
+            const modelMessage: Message = { role: 'model', text: response.text ?? '' };
             setHistory(prev => [...prev, modelMessage]);
         } catch (error) {
             console.error("AI Assistant Error:", error);

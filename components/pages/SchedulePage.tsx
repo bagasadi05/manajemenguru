@@ -128,7 +128,7 @@ const SchedulePage: React.FC = () => {
 
         try {
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction, responseMimeType: "application/json", responseSchema, } });
-            setAnalysisResult(JSON.parse(response.text));
+            setAnalysisResult(JSON.parse(response.text ?? ''));
         } catch (error) {
             console.error("Schedule Analysis Error:", error);
             setAnalysisResult({ error: "Gagal menganalisis jadwal. Silakan coba lagi." });

@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './index.css';
 
 // In development, ensure no stale Service Worker or caches interfere with Vite HMR
 if (import.meta && (import.meta as any).env && (import.meta as any).env.DEV) {

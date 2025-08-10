@@ -6,8 +6,15 @@ import type { Database } from './database.types'; // This will be generated from
 // The credentials below have been provided to make the application runnable.
 // In a production environment, you should use environment variables
 // (e.g., process.env.SUPABASE_URL) to keep your credentials secure.
-const supabaseUrl = 'https://fddvcyqbfqydvsfujcxd.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkZHZjeXFiZnF5ZHZzZnVqY3hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODQ0MzAsImV4cCI6MjA2ODQ2MDQzMH0.kSKbnUaWaJmPjdz9TGxWbZZ8dcamVupdkeozWQct9i4';
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL || 'https://fddvcyqbfqydvsfujcxd.supabase.co';
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkZHZjeXFiZnF5ZHZzZnVqY3hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4ODQ0MzAsImV4cCI6MjA2ODQ2MDQzMH0.kSKbnUaWaJmPjdz9TGxWbZZ8dcamVupdkeozWQct9i4';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and anonymous key are required');
+}
 
 
 // The generic type `Database` will be generated from your Supabase schema

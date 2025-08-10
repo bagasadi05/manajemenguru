@@ -16,10 +16,10 @@ interface AuthContextType {
   session: Session | null;
   user: AppUser | null;
   loading: boolean;
-  login: (email: string, password?: string) => Promise<any>;
+  login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
   updateUser: (data: { name?: string; avatar_url?: string; password?: string }) => Promise<any>;
-  signup: (name: string, email: string, password?: string) => Promise<any>;
+  signup: (name: string, email: string, password: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);

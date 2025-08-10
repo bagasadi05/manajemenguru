@@ -9,11 +9,13 @@ import { Switch } from '../ui/Switch';
 import { Modal } from '../ui/Modal';
 import { UserCircleIcon, PaletteIcon, BellIcon, ShieldIcon, CameraIcon, SunIcon, MoonIcon, CheckCircleIcon, LinkIcon, DownloadCloudIcon } from '../Icons';
 import * as ics from 'ics';
+import type { EventAttributes } from 'ics';
 import { supabase } from '../../services/supabase';
 import { Database } from '../../services/database.types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOfflineStatus } from '../../hooks/useOfflineStatus';
 import { optimizeImage } from '../utils/image';
+import LoadingSpinner from '../LoadingSpinner';
 
 
 type ScheduleRow = Database['public']['Tables']['schedules']['Row'];
@@ -109,8 +111,18 @@ const ProfileSection: React.FC = () => {
                                 className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
                             />
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg" className="hidden" disabled={uploading}/>
-                            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !isOnline} className="absolute -bottom-1 -right-1 p-2 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform" aria-label="Ubah foto profil">
-                                {uploading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CameraIcon className="w-5 h-5" />}
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading || !isOnline}
+                                className="absolute -bottom-1 -right-1 p-2 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform"
+                                aria-label="Ubah foto profil"
+                            >
+                                {uploading ? (
+                                    <LoadingSpinner sizeClass="w-5 h-5" borderWidthClass="border-2" colorClass="border-white" />
+                                ) : (
+                                    <CameraIcon className="w-5 h-5" />
+                                )}
                             </button>
                         </div>
                         <div className="flex-1">
@@ -170,7 +182,9 @@ const AppearanceSection: React.FC = () => {
 };
 
 const NotificationsSection: React.FC = () => {
-    const { enableScheduleNotifications, disableScheduleNotifications, user } = useAuth();
+    const { user } = useAuth();
+    const enableScheduleNotifications = async (_schedule: ScheduleWithClassName[]) => false;
+    const disableScheduleNotifications = async () => {};
     const toast = useToast();
     const isOnline = useOfflineStatus();
     const [isEnabled, setIsEnabled] = useState(() => localStorage.getItem('scheduleNotificationsEnabled') === 'true');
@@ -279,7 +293,7 @@ const IntegrationsSection: React.FC = () => {
         };
         const dayNameToIndex: Record<string, number> = { 'Minggu': 0, 'Senin': 1, 'Selasa': 2, 'Rabu': 3, 'Kamis': 4, 'Jumat': 5, 'Sabtu': 6 };
 
-        const events = scheduleData.map(item => {
+        const events: EventAttributes[] = scheduleData.map(item => {
             const [startHour, startMinute] = item.start_time.split(':').map(Number);
             const [endHour, endMinute] = item.end_time.split(':').map(Number);
 
@@ -305,14 +319,14 @@ const IntegrationsSection: React.FC = () => {
             const recurrenceRule = `FREQ=WEEKLY;BYDAY=${dayToICalDay[item.day]}`;
             
             return {
-                uid: `guru-pwa-${item.id}@myapp.com`, // Unique ID for each event
+                uid: `guru-pwa-${item.id}@myapp.com`,
                 title: `${item.subject} (Kelas ${item.class_id})`,
-                start: [year, month, day, startHour, startMinute],
-                end: [year, month, day, endHour, endMinute],
-                recurrenceRule: recurrenceRule,
+                start: [year, month, day, startHour, startMinute] as [number, number, number, number, number],
+                end: [year, month, day, endHour, endMinute] as [number, number, number, number, number],
+                recurrenceRule,
                 description: `Jadwal mengajar untuk kelas ${item.class_id}`,
                 location: 'Sekolah',
-                startOutputType: 'local', // Explicitly set timezone handling
+                startOutputType: 'local',
                 endOutputType: 'local',
             };
         });

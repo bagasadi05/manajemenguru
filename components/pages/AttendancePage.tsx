@@ -5,7 +5,8 @@ import { Card, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
-import { CheckCircleIcon, XCircleIcon, AlertCircleIcon, DownloadCloudIcon, BrainCircuitIcon, UserCheckIcon, PencilIcon, SparklesIcon, UserMinusIcon, UserPlusIcon } from '../Icons';
+import { CheckCircleIcon, DownloadCloudIcon, BrainCircuitIcon, UserCheckIcon, UserMinusIcon, UserPlusIcon } from '../Icons';
+import LoadingSpinner from '../LoadingSpinner';
 import { useToast } from '../../hooks/useToast';
 import { supabase } from '../../services/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -225,7 +226,7 @@ const AttendancePage: React.FC = () => {
             const responseSchema = { type: Type.OBJECT, properties: { perfect_attendance: { type: Type.ARRAY, description: "Nama siswa dengan kehadiran 100% (tidak ada Izin, Sakit, atau Alpha).", items: { type: Type.STRING } }, frequent_absentees: { type: Type.ARRAY, description: "Siswa dengan 3 atau lebih status 'Alpha'.", items: { type: Type.OBJECT, properties: { student_name: { type: Type.STRING }, absent_days: { type: Type.NUMBER } } } }, pattern_warnings: { type: Type.ARRAY, description: "Pola absensi yang tidak biasa atau mengkhawatirkan.", items: { type: Type.OBJECT, properties: { pattern_description: { type: Type.STRING, description: "cth., 'Tingkat absensi (Alpha) tinggi pada hari Senin.'" }, implicated_students: { type: Type.ARRAY, description: "Siswa yang terkait dengan pola ini.", items: { type: Type.STRING } } } } } } };
 
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction, responseMimeType: "application/json", responseSchema } });
-            setAiAnalysisResult(JSON.parse(response.text));
+            setAiAnalysisResult(JSON.parse(response.text ?? ''));
         } catch (err: any) {
             toast.error("Gagal menganalisis data kehadiran.");
             console.error(err);
@@ -256,11 +257,22 @@ const AttendancePage: React.FC = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {statusOptions.map(({ value, label, icon: Icon, color }) => (
-                    <div key={value} onClick={() => setQuickMarkStatus(quickMarkStatus === value ? null : value)}
-                        className={`p-4 rounded-xl flex items-center gap-3 cursor-pointer transition-all duration-300 transform hover:-translate-y-1 ${quickMarkStatus === value ? `ring-4 ring-${color}-500/50 bg-white dark:bg-gray-800` : 'bg-white/60 dark:bg-gray-900/60'}`}>
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-${color}-100 dark:bg-${color}-900/40`}><Icon className={`w-6 h-6 text-${color}-600 dark:text-${color}-300`}/></div>
-                        <div><p className="text-xl font-bold">{attendanceSummary[value]}</p><p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p></div>
-                    </div>
+                    <button
+                        key={value}
+                        type="button"
+                        onClick={() => setQuickMarkStatus(quickMarkStatus === value ? null : value)}
+                        aria-label={`Pilih ${label} untuk mode cepat`}
+                        aria-pressed={quickMarkStatus === value}
+                        className={`p-4 rounded-xl flex items-center gap-3 transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus-visible:ring-4 ring-${color}-500/50 ${quickMarkStatus === value ? 'ring-4 bg-white dark:bg-gray-800' : 'bg-white/60 dark:bg-gray-900/60'}`}
+                    >
+                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-${color}-100 dark:bg-${color}-900/40`}>
+                            <Icon className={`w-6 h-6 text-${color}-600 dark:text-${color}-300`} />
+                        </div>
+                        <div>
+                            <p className="text-xl font-bold">{attendanceSummary[value]}</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
+                        </div>
+                    </button>
                 ))}
             </div>
             
@@ -275,9 +287,31 @@ const AttendancePage: React.FC = () => {
                     const record = attendanceRecords[student.id];
                     const statusColor = record ? statusOptions.find(o => o.value === record.status)?.color : 'gray';
                     return (
-                        <Card key={student.id} onClick={() => handleQuickMark(student.id)} className={`p-4 flex flex-col gap-3 transition-all ${quickMarkStatus ? 'cursor-pointer hover:ring-2 hover:ring-blue-500' : ''} border-l-4 border-${statusColor}-500`}>
+                        <Card
+                            key={student.id}
+                            onClick={() => handleQuickMark(student.id)}
+                            className={`p-4 flex flex-col gap-3 transition-all ${quickMarkStatus ? 'cursor-pointer hover:ring-2 hover:ring-blue-500' : ''} border-l-4 border-${statusColor}-500`}
+                            tabIndex={quickMarkStatus ? 0 : undefined}
+                            role={quickMarkStatus ? 'button' : undefined}
+                            onKeyDown={(e) => {
+                                if (quickMarkStatus && (e.key === 'Enter' || e.key === ' ')) {
+                                    e.preventDefault();
+                                    handleQuickMark(student.id);
+                                }
+                            }}
+                            aria-label={quickMarkStatus ? `Tandai ${student.name} sebagai ${quickMarkStatus}` : undefined}
+                        >
                             <div className="flex items-center gap-3"><img src={student.avatar_url} alt={student.name} className="w-10 h-10 rounded-full" /><p className="font-semibold flex-grow">{student.name}</p></div>
-                            <div className="flex justify-around gap-1">{statusOptions.map(opt => (<button key={opt.value} onClick={(e) => { e.stopPropagation(); handleStatusChange(student.id, opt.value); }} className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${record?.status === opt.value ? `bg-${opt.color}-500 text-white shadow-md` : `bg-gray-200 dark:bg-gray-700 hover:bg-${opt.color}-200 dark:hover:bg-${opt.color}-600`}`}><opt.icon className="w-5 h-5"/></button>))}</div>
+                            <div className="flex justify-around gap-1">{statusOptions.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={(e) => { e.stopPropagation(); handleStatusChange(student.id, opt.value); }}
+                                    aria-label={opt.label}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${record?.status === opt.value ? `bg-${opt.color}-500 text-white shadow-md` : `bg-gray-200 dark:bg-gray-700 hover:bg-${opt.color}-200 dark:hover:bg-${opt.color}-600`}`}
+                                >
+                                    <opt.icon className="w-5 h-5" />
+                                </button>
+                            ))}</div>
                             {(record?.status === 'Izin' || record?.status === 'Sakit') && <Input placeholder="Tambah catatan..." value={record.note} onChange={(e) => handleNoteChange(student.id, e.target.value)} onClick={e => e.stopPropagation()} className="text-sm h-9" />}
                         </Card>
                     );
@@ -291,8 +325,11 @@ const AttendancePage: React.FC = () => {
             <Modal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} title="Export Laporan Absensi"><div className="space-y-4"><p className="text-sm">Pilih bulan dan tahun untuk laporan absensi.</p><Input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} disabled={isExporting} /><div className="flex justify-end gap-2 pt-4"><Button variant="ghost" onClick={() => setIsExportModalOpen(false)}>Batal</Button><Button onClick={handleExport} disabled={isExporting}>{isExporting ? 'Memproses...' : 'Export PDF'}</Button></div></div></Modal>
             
             <Modal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} title="Analisis Pola Kehadiran AI" icon={<BrainCircuitIcon className="h-5 w-5"/>}>
-                {isAiLoading ? <div className="text-center p-8"><SparklesIcon className="w-10 h-10 mx-auto text-purple-500 animate-pulse"/>Memproses data...</div>
-                : aiAnalysisResult ? (
+                {isAiLoading ? (
+                    <div className="text-center p-8">
+                        <LoadingSpinner sizeClass="w-10 h-10" label="Menganalisis data..." />
+                    </div>
+                ) : aiAnalysisResult ? (
                     <div className="space-y-4 text-sm max-h-[60vh] overflow-y-auto pr-2">
                         {aiAnalysisResult.perfect_attendance.length > 0 && <div><h4 className="font-bold text-green-600 dark:text-green-400">Kehadiran Sempurna</h4><ul className="list-disc pl-5 mt-1">{aiAnalysisResult.perfect_attendance.map(name => <li key={name}>{name}</li>)}</ul></div>}
                         {aiAnalysisResult.frequent_absentees.length > 0 && <div><h4 className="font-bold text-red-600 dark:text-red-400">Sering Absen (Alpha)</h4><ul className="list-disc pl-5 mt-1">{aiAnalysisResult.frequent_absentees.map(s => <li key={s.student_name}>{s.student_name} ({s.absent_days} hari)</li>)}</ul></div>}

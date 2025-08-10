@@ -19,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOfflineStatus } from '../../hooks/useOfflineStatus';
 import { optimizeImage } from '../utils/image';
 import { violationList, ViolationItem } from '../../services/violations.data';
+import LoadingSpinner from '../LoadingSpinner';
 
 type StudentRow = Database['public']['Tables']['students']['Row'];
 type ClassRow = Database['public']['Tables']['classes']['Row'];
@@ -464,7 +465,7 @@ const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: Attendanc
             `;
 
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction } });
-            setAnalysis(response.text);
+            setAnalysis(response.text ?? '');
         } catch (error) {
             console.error(error);
             setAnalysis("Gagal memuat analisis perilaku. Silakan coba lagi.");
@@ -670,7 +671,7 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
                 }
             });
             
-            const summaryContent = JSON.parse(response.text);
+            const summaryContent = JSON.parse(response.text ?? '');
             setAiSummaryState({ loading: false, error: null, content: summaryContent });
             setEditableAiSummary(summaryContent);
             return summaryContent;
@@ -957,8 +958,8 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
         e.preventDefault();
         const editingReport = modalState.type === 'report' ? modalState.data : null;
         const formData = new FormData(e.currentTarget);
-        const payload: Omit<ReportRow, 'created_at'> & {id?: string} = {
-            id: editingReport?.id, title: formData.get('title') as string, notes: formData.get('notes') as string,
+        const payload: Omit<ReportRow, 'created_at' | 'id'> & { id?: string } = {
+            id: editingReport?.id ?? undefined, title: formData.get('title') as string, notes: formData.get('notes') as string,
             attachment_url: editingReport?.attachment_url || null, date: editingReport?.date || getLocalDateString(),
             student_id: studentId!, user_id: user!.id,
         };
@@ -1074,7 +1075,7 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
     const handleDeleteStudent = () => setModalState({ type: 'confirmDelete', title: 'Hapus Siswa', message: 'Aksi ini tidak dapat dibatalkan dan akan menghapus semua data terkait siswa ini (laporan, absensi, nilai, pelanggaran). Yakin melanjutkan?', onConfirm: () => deleteStudentMutation.mutate(), isPending: deleteStudentMutation.isPending || !isOnline });
     
     
-    if (isLoading) return <div className="flex items-center justify-center h-screen"><div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+    if (isLoading) return <LoadingSpinner fullScreen />;
     if (isError || !student) return <div className="text-center py-10">Siswa tidak ditemukan.</div>;
     
     const summarySections: { key: keyof AiSummary, label: string }[] = [
@@ -1149,7 +1150,11 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
                                 className="absolute -bottom-1 -right-1 p-1.5 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform" 
                                 aria-label="Ubah foto profil"
                             >
-                                {updateAvatarMutation.isPending ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CameraIcon className="w-4 h-4" />}
+                                {updateAvatarMutation.isPending ? (
+                                    <LoadingSpinner sizeClass="w-4 h-4" borderWidthClass="border-2" colorClass="border-white" />
+                                ) : (
+                                    <CameraIcon className="w-4 h-4" />
+                                )}
                             </button>
                         </div>
                         <div>
@@ -1433,7 +1438,11 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
                                 className="absolute -bottom-1 -right-1 p-2 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform" 
                                 aria-label="Ubah foto profil"
                             >
-                                {updateAvatarMutation.isPending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CameraIcon className="w-5 h-5" />}
+                                {updateAvatarMutation.isPending ? (
+                                    <LoadingSpinner sizeClass="w-5 h-5" borderWidthClass="border-2" colorClass="border-white" />
+                                ) : (
+                                    <CameraIcon className="w-5 h-5" />
+                                )}
                             </button>
                         </div>
                     </div>

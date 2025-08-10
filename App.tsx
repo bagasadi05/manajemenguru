@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
 import Layout from './components/Layout';
+import LoadingSpinner from './components/LoadingSpinner';
 import PwaPrompt from './components/PwaPrompt';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { QueryClient } from '@tanstack/query-core';
@@ -31,11 +32,7 @@ const PrivateRoutes = () => {
   const { session, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   return session ? (
@@ -47,11 +44,6 @@ const PrivateRoutes = () => {
   );
 };
 
-const loadingSpinner = (
-    <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>
-);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,7 +61,7 @@ function App() {
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>
-              <Suspense fallback={loadingSpinner}>
+              <Suspense fallback={<LoadingSpinner fullScreen />}>
                 <HashRouter>
                   <Routes>
                     <Route path="/login" element={<LoginPage />} />

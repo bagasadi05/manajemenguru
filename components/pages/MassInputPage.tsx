@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../services/supabase';
@@ -49,6 +48,194 @@ const actionCards: { mode: InputMode; title: string; description: string; icon: 
     { mode: 'violation', title: 'Input Pelanggaran', description: 'Catat poin pelanggaran untuk beberapa siswa sekaligus.', icon: ShieldAlertIcon },
     { mode: 'bulk_report', title: 'Cetak Rapor Massal', description: 'Cetak beberapa rapor siswa dari satu kelas dalam satu file.', icon: PrinterIcon },
 ];
+
+// ----------------------------------------------------------------
+// Step 1 Component
+// ----------------------------------------------------------------
+interface Step1Props {
+    onModeSelect: (mode: InputMode) => void;
+}
+
+const Step1_ModeSelection: React.FC<Step1Props> = ({ onModeSelect }) => (
+    <div className="animate-fade-in">
+         <header className="text-center mb-8">
+            <h1 className="text-3xl font-bold tracking-tight">Pusat Input Cerdas</h1>
+            <p className="mt-2 text-lg text-gray-500 dark:text-gray-400">Pilih aksi massal yang ingin Anda lakukan.</p>
+        </header>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {actionCards.map(card => (
+                <Card key={card.mode} onClick={() => onModeSelect(card.mode)} className="cursor-pointer group hover:border-purple-500 hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-2">
+                    <CardContent className="p-6 text-center">
+                        <div className="flex justify-center mb-4">
+                            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-200 dark:from-purple-900/50 dark:to-indigo-900/70 rounded-full flex items-center justify-center transition-transform group-hover:scale-110">
+                                <card.icon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-bold">{card.title}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{card.description}</p>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    </div>
+);
+
+// ----------------------------------------------------------------
+// Step 2 Component
+// ----------------------------------------------------------------
+interface Step2Props {
+    mode: InputMode;
+    onBack: () => void;
+    classes: ClassRow[] | undefined;
+    isLoadingClasses: boolean;
+    selectedClass: string;
+    onClassChange: (value: string) => void;
+    students: StudentRow[] | undefined;
+    isLoadingStudents: boolean;
+
+    // State and handlers for different modes
+    quizInfo: any;
+    handleQuizInfoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    subjectGradeInfo: any;
+    handleSubjectGradeInfoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    scores: Record<string, string>;
+    handleScoreChange: (studentId: string, value: string) => void;
+    pasteData: string;
+    setPasteData: (value: string) => void;
+    handleAiParse: () => void;
+    isParsing: boolean;
+
+    selectedViolationCode: string;
+    setSelectedViolationCode: (value: string) => void;
+    violationDate: string;
+    setViolationDate: (value: string) => void;
+
+    selectedStudentIds: Set<string>;
+    handleSelectAllStudents: (checked: boolean) => void;
+    handleStudentSelect: (studentId: string) => void;
+    isAllSelected: boolean;
+
+    isSubmitting: boolean;
+    handleSubmit: () => void;
+
+    isExporting: boolean;
+    exportProgress: string;
+    handlePrintBulkReports: () => void;
+    isOnline: boolean;
+}
+
+const Step2_ConfigurationAndInput: React.FC<Step2Props> = (props) => {
+    const {
+        mode, onBack, classes, isLoadingClasses, selectedClass, onClassChange, students, isLoadingStudents,
+        quizInfo, handleQuizInfoChange, subjectGradeInfo, handleSubjectGradeInfoChange,
+        scores, handleScoreChange, pasteData, setPasteData, handleAiParse, isParsing,
+        selectedViolationCode, setSelectedViolationCode, violationDate, setViolationDate,
+        selectedStudentIds, handleSelectAllStudents, handleStudentSelect, isAllSelected,
+        isSubmitting, handleSubmit, isExporting, exportProgress, handlePrintBulkReports, isOnline
+    } = props;
+
+    const currentAction = actionCards.find(c => c.mode === mode)!;
+    const selectedViolation = useMemo(() => violationList.find(v => v.code === selectedViolationCode) || null, [selectedViolationCode]);
+    const gradedCount = Object.values(scores).filter(s => s?.trim()).length;
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            <header className="flex items-center gap-4">
+                <Button variant="outline" size="icon" onClick={onBack}><ArrowLeftIcon className="w-4 h-4" /></Button>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">{currentAction.title}</h1>
+                    <p className="mt-1 text-gray-500 dark:text-gray-400">{currentAction.description}</p>
+                </div>
+            </header>
+
+            <Card>
+                <CardHeader><CardTitle>Tahap 1: Konfigurasi</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-3">
+                        <label htmlFor="class-select" className="block text-sm font-medium mb-1">Pilih Kelas</label>
+                        <Select id="class-select" value={selectedClass} onChange={e => onClassChange(e.target.value)} disabled={isLoadingClasses}>
+                            <option value="" disabled>-- Pilih Kelas --</option>{classes?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </Select>
+                    </div>
+                    {mode === 'quiz' && <>
+                        <div><label htmlFor="quiz-name-input" className="block text-sm font-medium mb-1">Nama Aktivitas</label><Input id="quiz-name-input" name="name" value={quizInfo.name} onChange={handleQuizInfoChange} placeholder="cth. Menjawab Pertanyaan" /></div>
+                        <div><label htmlFor="quiz-subject-input" className="block text-sm font-medium mb-1">Mata Pelajaran</label><Input id="quiz-subject-input" name="subject" value={quizInfo.subject} onChange={handleQuizInfoChange} placeholder="cth. Matematika" /></div>
+                        <div><label htmlFor="quiz-date-input" className="block text-sm font-medium mb-1">Tanggal</label><Input id="quiz-date-input" name="date" type="date" value={quizInfo.date} onChange={handleQuizInfoChange} /></div>
+                    </>}
+                    {mode === 'subject_grade' && <>
+                        <div className="lg:col-span-1">
+                            <label htmlFor="subject-input" className="block text-sm font-medium mb-1">Mata Pelajaran</label>
+                            <Input id="subject-input" name="subject" value={subjectGradeInfo.subject} onChange={handleSubjectGradeInfoChange} placeholder="cth. Bahasa Indonesia" />
+                        </div>
+                        <div className="lg:col-span-2">
+                            <label htmlFor="notes-input" className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
+                            <Input id="notes-input" name="notes" value={subjectGradeInfo.notes} onChange={handleSubjectGradeInfoChange} placeholder="cth. Penilaian Akhir Semester" />
+                        </div>
+                    </>}
+                    {mode === 'violation' && <>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Jenis Pelanggaran</label>
+                            <Select value={selectedViolationCode} onChange={(e) => setSelectedViolationCode(e.target.value)}>
+                                <option value="" disabled>-- Pilih Pelanggaran --</option>
+                                {['Ringan', 'Sedang', 'Berat'].map(cat => (<optgroup key={cat} label={`Pelanggaran ${cat}`}>{violationList.filter(v => v.category === cat).map(v => (<option key={v.code} value={v.code}>{v.description}</option>))}</optgroup>))}
+                            </Select>
+                            {selectedViolation && <p className="text-xs text-red-500 mt-1">Poin: {selectedViolation.points}</p>}
+                        </div>
+                        <div><label className="block text-sm font-medium mb-1">Tanggal</label><Input type="date" value={violationDate} onChange={e => setViolationDate(e.target.value)} /></div>
+                    </>}
+                </CardContent>
+            </Card>
+
+            {mode === 'subject_grade' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><SparklesIcon className="w-5 h-5 text-purple-500"/>Tempel Data Nilai (AI Powered)</CardTitle>
+                        <CardDescription>Salin data dari spreadsheet (cth. kolom nama dan nilai) dan tempel di sini untuk pengisian otomatis.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <textarea value={pasteData} onChange={e => setPasteData(e.target.value)} placeholder="Contoh:&#10;Budi Santoso   95&#10;Ani Wijaya      88&#10;Cici Paramida   76" rows={4} className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-600"></textarea>
+                        <Button onClick={handleAiParse} disabled={isParsing || !isOnline} className="mt-2"><ClipboardPasteIcon className="w-4 h-4 mr-2"/>{isParsing ? 'Memproses...' : 'Proses dengan AI'}</Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            <Card>
+                <CardHeader><CardTitle>Tahap 2: Input Data Siswa</CardTitle></CardHeader>
+                <CardContent>
+                    {isLoadingStudents && <div className="text-center p-8">Memuat siswa...</div>}
+                    {!selectedClass && <div className="text-center p-8 text-gray-500">Pilih kelas untuk menampilkan daftar siswa.</div>}
+                    {students && students.length > 0 && (
+                         <div className="overflow-x-auto"><table className="w-full text-sm">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"><tr>
+                                <th scope="col" className="p-4">{mode !== 'subject_grade' && mode !== 'bulk_report' && <Checkbox checked={isAllSelected} onChange={e => handleSelectAllStudents(e.target.checked)} />}</th>
+                                <th scope="col" className="px-6 py-3">Nama Siswa</th>
+                                <th scope="col" className="px-6 py-3">{mode === 'subject_grade' ? 'Nilai (0-100)' : 'Pilih'}</th>
+                            </tr></thead>
+                            <tbody>{students.map(s => (<tr key={s.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className="w-4 p-4">{mode !== 'subject_grade' && <Checkbox checked={selectedStudentIds.has(s.id)} onChange={() => handleStudentSelect(s.id)} />}</td>
+                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{s.name}</th>
+                                <td className="px-6 py-4">{mode === 'subject_grade' ? <Input type="number" min="0" max="100" value={scores[s.id] || ''} onChange={e => handleScoreChange(s.id, e.target.value)} className="w-24 h-8" /> : <Checkbox checked={selectedStudentIds.has(s.id)} onChange={() => handleStudentSelect(s.id)} />}</td>
+                            </tr>))}</tbody>
+                        </table></div>
+                    )}
+                </CardContent>
+                {students && students.length > 0 && <CardFooter className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50 dark:bg-gray-900/50">
+                    {mode === 'subject_grade' ? (
+                        <div className="text-sm text-gray-500">{gradedCount} / {students.length} siswa dinilai</div>
+                    ) : (
+                        <div className="text-sm text-gray-500">{selectedStudentIds.size} / {students.length} siswa dipilih</div>
+                    )}
+                    {mode === 'bulk_report' ? (
+                        <Button onClick={handlePrintBulkReports} disabled={isExporting || selectedStudentIds.size === 0 || !isOnline}><PrinterIcon className="w-4 h-4 mr-2" />{isExporting ? `Mencetak ${exportProgress}...` : `Cetak ${selectedStudentIds.size} Rapor`}</Button>
+                    ) : (
+                        <Button onClick={handleSubmit} disabled={isSubmitting || !isOnline}>{isSubmitting ? 'Menyimpan...' : 'Simpan Semua'}</Button>
+                    )}
+                </CardFooter>}
+            </Card>
+        </div>
+    );
+};
+
 
 const MassInputPage: React.FC = () => {
     const { user } = useAuth();
@@ -321,136 +508,19 @@ const MassInputPage: React.FC = () => {
     };
     
     const isSubmitting = saveQuizScoresMutation.isPending || saveSubjectGradesMutation.isPending || saveViolationsMutation.isPending;
-    const gradedCount = Object.values(scores).filter(s => s?.trim()).length;
     
-    // UI Components
-    const Step1_ModeSelection = () => (
-        <div className="animate-fade-in">
-             <header className="text-center mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">Pusat Input Cerdas</h1>
-                <p className="mt-2 text-lg text-gray-500 dark:text-gray-400">Pilih aksi massal yang ingin Anda lakukan.</p>
-            </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {actionCards.map(card => (
-                    <Card key={card.mode} onClick={() => handleModeSelect(card.mode)} className="cursor-pointer group hover:border-purple-500 hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-2">
-                        <CardContent className="p-6 text-center">
-                            <div className="flex justify-center mb-4">
-                                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-indigo-200 dark:from-purple-900/50 dark:to-indigo-900/70 rounded-full flex items-center justify-center transition-transform group-hover:scale-110">
-                                    <card.icon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                                </div>
-                            </div>
-                            <h3 className="text-lg font-bold">{card.title}</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{card.description}</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        </div>
-    );
-    
-    const Step2_ConfigurationAndInput = () => {
-        const currentAction = actionCards.find(c => c.mode === mode)!;
-        return (
-            <div className="space-y-6 animate-fade-in">
-                <header className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={handleBack}><ArrowLeftIcon className="w-4 h-4" /></Button>
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{currentAction.title}</h1>
-                        <p className="mt-1 text-gray-500 dark:text-gray-400">{currentAction.description}</p>
-                    </div>
-                </header>
-
-                <Card>
-                    <CardHeader><CardTitle>Tahap 1: Konfigurasi</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-3">
-                            <label htmlFor="class-select" className="block text-sm font-medium mb-1">Pilih Kelas</label>
-                            <Select id="class-select" value={selectedClass} onChange={e => setSelectedClass(e.target.value)} disabled={isLoadingClasses}>
-                                <option value="" disabled>-- Pilih Kelas --</option>{classes?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </Select>
-                        </div>
-                        {mode === 'quiz' && <>
-                            <div><label className="block text-sm font-medium mb-1">Nama Aktivitas</label><Input name="name" value={quizInfo.name} onChange={handleQuizInfoChange} placeholder="cth. Menjawab Pertanyaan" /></div>
-                            <div><label className="block text-sm font-medium mb-1">Mata Pelajaran</label><Input name="subject" value={quizInfo.subject} onChange={handleQuizInfoChange} placeholder="cth. Matematika" /></div>
-                            <div><label className="block text-sm font-medium mb-1">Tanggal</label><Input name="date" type="date" value={quizInfo.date} onChange={handleQuizInfoChange} /></div>
-                        </>}
-                        {mode === 'subject_grade' && <>
-                            <div className="lg:col-span-1">
-                                <label htmlFor="subject-input" className="block text-sm font-medium mb-1">Mata Pelajaran</label>
-                                <Input id="subject-input" name="subject" value={subjectGradeInfo.subject} onChange={handleSubjectGradeInfoChange} placeholder="cth. Bahasa Indonesia" />
-                            </div>
-                            <div className="lg:col-span-2">
-                                <label htmlFor="notes-input" className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
-                                <Input id="notes-input" name="notes" value={subjectGradeInfo.notes} onChange={handleSubjectGradeInfoChange} placeholder="cth. Penilaian Akhir Semester" />
-                            </div>
-                        </>}
-                        {mode === 'violation' && <>
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Jenis Pelanggaran</label>
-                                <Select value={selectedViolationCode} onChange={(e) => setSelectedViolationCode(e.target.value)}>
-                                    <option value="" disabled>-- Pilih Pelanggaran --</option>
-                                    {['Ringan', 'Sedang', 'Berat'].map(cat => (<optgroup key={cat} label={`Pelanggaran ${cat}`}>{violationList.filter(v => v.category === cat).map(v => (<option key={v.code} value={v.code}>{v.description}</option>))}</optgroup>))}
-                                </Select>
-                                {selectedViolation && <p className="text-xs text-red-500 mt-1">Poin: {selectedViolation.points}</p>}
-                            </div>
-                            <div><label className="block text-sm font-medium mb-1">Tanggal</label><Input type="date" value={violationDate} onChange={e => setViolationDate(e.target.value)} /></div>
-                        </>}
-                    </CardContent>
-                </Card>
-
-                {mode === 'subject_grade' && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><SparklesIcon className="w-5 h-5 text-purple-500"/>Tempel Data Nilai (AI Powered)</CardTitle>
-                            <CardDescription>Salin data dari spreadsheet (cth. kolom nama dan nilai) dan tempel di sini untuk pengisian otomatis.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <textarea value={pasteData} onChange={e => setPasteData(e.target.value)} placeholder="Contoh:&#10;Budi Santoso   95&#10;Ani Wijaya      88&#10;Cici Paramida   76" rows={4} className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-600"></textarea>
-                            <Button onClick={handleAiParse} disabled={isParsing || !isOnline} className="mt-2"><ClipboardPasteIcon className="w-4 h-4 mr-2"/>{isParsing ? 'Memproses...' : 'Proses dengan AI'}</Button>
-                        </CardContent>
-                    </Card>
-                )}
-
-                <Card>
-                    <CardHeader><CardTitle>Tahap 2: Input Data Siswa</CardTitle></CardHeader>
-                    <CardContent>
-                        {isLoadingStudents && <div className="text-center p-8">Memuat siswa...</div>}
-                        {!selectedClass && <div className="text-center p-8 text-gray-500">Pilih kelas untuk menampilkan daftar siswa.</div>}
-                        {students && students.length > 0 && (
-                             <div className="overflow-x-auto"><table className="w-full text-sm">
-                                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"><tr>
-                                    <th scope="col" className="p-4">{mode !== 'subject_grade' && mode !== 'bulk_report' && <Checkbox checked={isAllSelected} onChange={e => handleSelectAllStudents(e.target.checked)} />}</th>
-                                    <th scope="col" className="px-6 py-3">Nama Siswa</th>
-                                    <th scope="col" className="px-6 py-3">{mode === 'subject_grade' ? 'Nilai (0-100)' : 'Pilih'}</th>
-                                </tr></thead>
-                                <tbody>{students.map(s => (<tr key={s.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                    <td className="w-4 p-4">{mode !== 'subject_grade' && <Checkbox checked={selectedStudentIds.has(s.id)} onChange={() => handleStudentSelect(s.id)} />}</td>
-                                    <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{s.name}</th>
-                                    <td className="px-6 py-4">{mode === 'subject_grade' ? <Input type="number" min="0" max="100" value={scores[s.id] || ''} onChange={e => handleScoreChange(s.id, e.target.value)} className="w-24 h-8" /> : <Checkbox checked={selectedStudentIds.has(s.id)} onChange={() => handleStudentSelect(s.id)} />}</td>
-                                </tr>))}</tbody>
-                            </table></div>
-                        )}
-                    </CardContent>
-                    {students && students.length > 0 && <CardFooter className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50 dark:bg-gray-900/50">
-                        {mode === 'subject_grade' ? (
-                            <div className="text-sm text-gray-500">{gradedCount} / {students.length} siswa dinilai</div>
-                        ) : (
-                            <div className="text-sm text-gray-500">{selectedStudentIds.size} / {students.length} siswa dipilih</div>
-                        )}
-                        {mode === 'bulk_report' ? (
-                            <Button onClick={handlePrintBulkReports} disabled={isExporting || selectedStudentIds.size === 0 || !isOnline}><PrinterIcon className="w-4 h-4 mr-2" />{isExporting ? `Mencetak ${exportProgress}...` : `Cetak ${selectedStudentIds.size} Rapor`}</Button>
-                        ) : (
-                            <Button onClick={handleSubmit} disabled={isSubmitting || !isOnline}>{isSubmitting ? 'Menyimpan...' : 'Simpan Semua'}</Button>
-                        )}
-                    </CardFooter>}
-                </Card>
-            </div>
-        )
+    const step2Props: Step2Props = {
+        mode, onBack: handleBack, classes, isLoadingClasses, selectedClass, onClassChange: setSelectedClass, students, isLoadingStudents,
+        quizInfo, handleQuizInfoChange, subjectGradeInfo, handleSubjectGradeInfoChange,
+        scores, handleScoreChange, pasteData, setPasteData, handleAiParse, isParsing,
+        selectedViolationCode, setSelectedViolationCode, violationDate, setViolationDate,
+        selectedStudentIds, handleSelectAllStudents, handleStudentSelect, isAllSelected: isAllSelected,
+        isSubmitting, handleSubmit, isExporting, exportProgress, handlePrintBulkReports, isOnline
     };
-    
+
     return (
         <div className="space-y-6">
-            {step === 1 ? <Step1_ModeSelection /> : <Step2_ConfigurationAndInput />}
+            {step === 1 ? <Step1_ModeSelection onModeSelect={handleModeSelect} /> : <Step2_ConfigurationAndInput {...step2Props} />}
         </div>
     );
 };

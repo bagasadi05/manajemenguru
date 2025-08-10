@@ -96,13 +96,15 @@ const MassInputPage: React.FC = () => {
     const handleModeSelect = (selectedMode: InputMode) => { setMode(selectedMode); setStep(2); };
     const handleBack = () => { setStep(1); setSelectedClass(classes?.[0]?.id || ''); };
     
-    const handleInfoChange = <T extends Record<string, any>>(
-        setter: React.Dispatch<React.SetStateAction<T>>,
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        setter((prev: T) => ({ ...prev, [e.target.name]: e.target.value }) as T);
+    const handleQuizInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setQuizInfo(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
-    const handleScoreChange = (studentId: string, value: string) => setScores(prev => ({ ...prev, [studentId]: value }));
+    const handleSubjectGradeInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSubjectGradeInfo(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+    const handleScoreChange = (studentId: string, value: string) => {
+        setScores(prev => ({ ...prev, [studentId]: value }));
+    };
 
     const handleAiParse = async () => {
         if (!pasteData.trim() || !students || students.length === 0) {
@@ -368,13 +370,19 @@ const MassInputPage: React.FC = () => {
                             </Select>
                         </div>
                         {mode === 'quiz' && <>
-                            <div><label className="block text-sm font-medium mb-1">Nama Aktivitas</label><Input name="name" value={quizInfo.name} onChange={e => handleInfoChange(setQuizInfo, e)} placeholder="cth. Menjawab Pertanyaan" /></div>
-                            <div><label className="block text-sm font-medium mb-1">Mata Pelajaran</label><Input name="subject" value={quizInfo.subject} onChange={e => handleInfoChange(setQuizInfo, e)} placeholder="cth. Matematika" /></div>
-                            <div><label className="block text-sm font-medium mb-1">Tanggal</label><Input name="date" type="date" value={quizInfo.date} onChange={e => handleInfoChange(setQuizInfo, e)} /></div>
+                            <div><label className="block text-sm font-medium mb-1">Nama Aktivitas</label><Input name="name" value={quizInfo.name} onChange={handleQuizInfoChange} placeholder="cth. Menjawab Pertanyaan" /></div>
+                            <div><label className="block text-sm font-medium mb-1">Mata Pelajaran</label><Input name="subject" value={quizInfo.subject} onChange={handleQuizInfoChange} placeholder="cth. Matematika" /></div>
+                            <div><label className="block text-sm font-medium mb-1">Tanggal</label><Input name="date" type="date" value={quizInfo.date} onChange={handleQuizInfoChange} /></div>
                         </>}
                         {mode === 'subject_grade' && <>
-                            <div className="lg:col-span-1"><label className="block text-sm font-medium mb-1">Mata Pelajaran</label><Input name="subject" value={subjectGradeInfo.subject} onChange={e => handleInfoChange(setSubjectGradeInfo, e)} placeholder="cth. Bahasa Indonesia" /></div>
-                            <div className="lg:col-span-2"><label className="block text-sm font-medium mb-1">Catatan (Opsional)</label><Input name="notes" value={subjectGradeInfo.notes} onChange={e => handleInfoChange(setSubjectGradeInfo, e)} placeholder="cth. Penilaian Akhir Semester" /></div>
+                            <div className="lg:col-span-1">
+                                <label htmlFor="subject-input" className="block text-sm font-medium mb-1">Mata Pelajaran</label>
+                                <Input id="subject-input" name="subject" value={subjectGradeInfo.subject} onChange={handleSubjectGradeInfoChange} placeholder="cth. Bahasa Indonesia" />
+                            </div>
+                            <div className="lg:col-span-2">
+                                <label htmlFor="notes-input" className="block text-sm font-medium mb-1">Catatan (Opsional)</label>
+                                <Input id="notes-input" name="notes" value={subjectGradeInfo.notes} onChange={handleSubjectGradeInfoChange} placeholder="cth. Penilaian Akhir Semester" />
+                            </div>
                         </>}
                         {mode === 'violation' && <>
                             <div>

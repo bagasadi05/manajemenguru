@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         },
         dedupe: ['react', 'react-dom']
+      },
+      test: {
+        environment: 'jsdom'
       }
     };
 });

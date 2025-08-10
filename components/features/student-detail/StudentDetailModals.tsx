@@ -10,7 +10,7 @@ import { Database } from '@/services/database.types';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { useStudentMutations } from '@/hooks/useStudentMutations';
 import { useAuth } from '@/hooks/useAuth';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { CameraIcon } from '@/components/Icons';
 
 type StudentRow = Database['public']['Tables']['students']['Row'];

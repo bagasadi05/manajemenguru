@@ -1,0 +1,53 @@
+/*
+  Print overrides for report cards and other printable views.
+  Strips colors, shadows, and interactive elements for paper output.
+*/
+
+@media print {
+  html, body {
+    background-color: #fff !important;
+    color: #000 !important;
+    font-family: Tinos, serif !important;
+  }
+  .print\:hidden { display: none !important; }
+  #report-card {
+    box-shadow: none !important;
+    margin: 0 !important;
+    border: none !important;
+    break-inside: avoid;
+  }
+  #report-card input,
+  #report-card textarea,
+  #report-card [contenteditable="true"] {
+    border: 1px solid transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    padding: 2px 1px !important;
+    margin: 0 !important;
+    width: 100%;
+    font-family: inherit !important;
+    font-size: inherit !important;
+    color: black !important;
+    line-height: 1.4;
+  }
+  #report-card textarea {
+    resize: none !important;
+    overflow: visible !important;
+    display: block;
+    height: auto !important;
+    min-height: 20px !important;
+  }
+  #report-card [contenteditable="true"]:focus,
+  #report-card input:focus,
+  #report-card textarea:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  tr, section { break-inside: avoid !important; }
+  thead { display: table-header-group !important; }
+}
+
+@page { size: A4; margin: 20mm; }

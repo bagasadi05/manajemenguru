@@ -276,7 +276,7 @@ const StudentsPage: React.FC = () => {
                                         <div className="absolute inset-0 bg-repeat bg-center [background-image:linear-gradient(135deg,_rgba(255,255,255,0.05)_25%,_transparent_25%,_transparent_50%,_rgba(255,255,255,0.05)_50%,_rgba(255,255,255,0.05)_75%,_transparent_75%,_transparent)] bg-[length:30px_30px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                         <div className="relative z-10 flex flex-col items-center text-center">
                                             <div className="relative mb-4"><img src={student.avatar_url} alt={student.name} className="w-28 h-28 rounded-full object-cover border-4 border-white/50 shadow-lg transition-transform duration-300 group-hover:scale-110"/></div>
-                                            <h4 className="font-bold text-lg text-shadow-md">{student.name}</h4>
+                                            <h4 className="font-bold text-lg drop-shadow-md">{student.name}</h4>
                                         </div>
                                     </div>
                                 </Link>

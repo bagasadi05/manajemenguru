@@ -13,6 +13,8 @@ interface LoadingSpinnerProps {
   fullScreen?: boolean;
   /** Extra classes for the container when fullScreen is true */
   containerClassName?: string;
+  /** Accessible label for screen readers */
+  label?: string;
 }
 
 /**
@@ -27,11 +29,16 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   className = '',
   fullScreen = false,
   containerClassName = '',
+  label = 'Loading...',
 }) => {
   const spinner = (
     <div
+      role="status"
+      aria-label={label}
       className={`${sizeClass} ${borderWidthClass} ${colorClass} border-t-transparent rounded-full animate-spin ${className}`}
-    />
+    >
+      <span className="sr-only">{label}</span>
+    </div>
   );
 
   return fullScreen ? (

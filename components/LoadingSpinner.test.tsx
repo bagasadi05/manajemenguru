@@ -15,4 +15,10 @@ describe('LoadingSpinner', () => {
     const spinner = container.firstChild as HTMLElement;
     expect(spinner).toHaveClass('w-4', 'h-4', 'border-2', 'border-red-500');
   });
+
+  it('applies accessible label and role', () => {
+    const { getByLabelText } = render(<LoadingSpinner label="Please wait" />);
+    const spinner = getByLabelText('Please wait');
+    expect(spinner).toHaveAttribute('role', 'status');
+  });
 });

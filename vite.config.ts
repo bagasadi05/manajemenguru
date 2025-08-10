@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         },
         dedupe: ['react', 'react-dom']
+      },
+      test: {
+        coverage: { reporter: ['text', 'lcov'] },
+        passWithNoTests: true
       }
     };
 });

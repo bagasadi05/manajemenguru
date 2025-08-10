@@ -239,7 +239,25 @@ const DonutChart: React.FC<{ data: Record<string, number>; onClick: (status: str
                     const offset = -cumulative;
                     cumulative += percentage;
                     return (
-                        <circle key={key} cx="18" cy="18" r="15.9155" fill="transparent" stroke={colors[key]} strokeWidth="3.8" strokeDasharray={dashArray} strokeDashoffset={offset} onClick={() => onClick(key)} className="cursor-pointer transition-all duration-300 hover:stroke-[5px]" />
+                        <circle
+                            key={key}
+                            cx="18"
+                            cy="18"
+                            r="15.9155"
+                            fill="transparent"
+                            stroke={colors[key]}
+                            strokeWidth="3.8"
+                            strokeDasharray={dashArray}
+                            strokeDashoffset={offset}
+                            onClick={() => onClick(key)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter' || e.key === ' ') onClick(key);
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`${key} ${value}%`}
+                            className="cursor-pointer transition-all duration-300 hover:stroke-[5px] focus:outline-none focus:stroke-[5px]"
+                        />
                     );
                 })}
             </svg>
@@ -368,10 +386,17 @@ const InteractiveStatCard: React.FC<{
     value: number | string;
     details: React.ReactNode;
     icon: React.FC<any>;
-}> = ({ link, color, shadow, label, value, details, icon: Icon }) => {
+    ariaLabel: string;
+}> = ({ link, color, shadow, label, value, details, icon: Icon, ariaLabel }) => {
     return (
-        <Link to={link} className="block group h-full relative">
-            <Card className={`text-white overflow-hidden relative transition-all duration-300 group-hover:-translate-y-2 shadow-lg ${shadow} bg-gradient-to-br ${color} h-full flex flex-col justify-center`}>
+        <Link
+            to={link}
+            aria-label={ariaLabel}
+            className="block group h-full relative focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 rounded-xl"
+        >
+            <Card
+                className={`text-white overflow-hidden relative transition-all duration-300 group-hover:-translate-y-2 shadow-lg ${shadow} bg-gradient-to-br ${color} h-full flex flex-col justify-center`}
+            >
                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full transition-transform duration-500 group-hover:scale-[8]"></div>
                 <CardContent className="p-5 relative z-10">
                     <div className="flex items-start justify-between">
@@ -441,9 +466,45 @@ const DashboardPage: React.FC = () => {
     const { students = [], dailyAttendanceSummary = { Hadir: 0, Izin: 0, Sakit: 0, Alpha: 0 }, weeklyAttendance = [], classCount = 0, newReportsCount = 0, tasks = [], academicRecords = [], violations = [] } = dashboardData ?? {};
     
     const stats = [
-        { label: 'Total Siswa', value: students.length, icon: UsersIcon, color: 'from-blue-500 to-sky-400', shadow: 'group-hover:shadow-[0_0_20px_theme(colors.sky.500/40%)]', link: '/siswa', details: <p className="text-sm font-medium">{students.filter(s => s.gender === 'Laki-laki').length} Laki-laki<br/>{students.filter(s => s.gender === 'Perempuan').length} Perempuan</p> },
-        { label: 'Laporan Baru', value: newReportsCount, icon: BookOpenIcon, color: 'from-yellow-500 to-amber-400', shadow: 'group-hover:shadow-[0_0_20px_theme(colors.amber.500/40%)]', link: '/siswa', details: <p className="text-sm font-medium leading-tight">Laporan baru dalam 7 hari terakhir</p> },
-        { label: 'Kelas Diajar', value: classCount, icon: CalendarIcon, color: 'from-purple-500 to-violet-400', shadow: 'group-hover:shadow-[0_0_20px_theme(colors.violet.500/40%)]', link: '/jadwal', details: <p className="text-sm font-medium leading-tight">Total kelas yang Anda ajar</p> },
+        {
+            label: 'Total Siswa',
+            value: students.length,
+            icon: UsersIcon,
+            color: 'from-blue-500 to-sky-400',
+            shadow: 'group-hover:shadow-[0_0_20px_theme(colors.sky.500/40%)]',
+            link: '/siswa',
+            ariaLabel: `Total Siswa ${students.length}. Klik untuk melihat daftar siswa`,
+            details: (
+                <p className="text-sm font-medium">
+                    {students.filter(s => s.gender === 'Laki-laki').length} Laki-laki<br />
+                    {students.filter(s => s.gender === 'Perempuan').length} Perempuan
+                </p>
+            ),
+        },
+        {
+            label: 'Laporan Baru',
+            value: newReportsCount,
+            icon: BookOpenIcon,
+            color: 'from-yellow-500 to-amber-400',
+            shadow: 'group-hover:shadow-[0_0_20px_theme(colors.amber.500/40%)]',
+            link: '/siswa',
+            ariaLabel: `Laporan baru ${newReportsCount} dalam 7 hari terakhir. Klik untuk melihat detail`,
+            details: (
+                <p className="text-sm font-medium leading-tight">Laporan baru dalam 7 hari terakhir</p>
+            ),
+        },
+        {
+            label: 'Kelas Diajar',
+            value: classCount,
+            icon: CalendarIcon,
+            color: 'from-purple-500 to-violet-400',
+            shadow: 'group-hover:shadow-[0_0_20px_theme(colors.violet.500/40%)]',
+            link: '/jadwal',
+            ariaLabel: `Anda mengajar ${classCount} kelas. Klik untuk melihat jadwal`,
+            details: (
+                <p className="text-sm font-medium leading-tight">Total kelas yang Anda ajar</p>
+            ),
+        },
     ];
     
     return (

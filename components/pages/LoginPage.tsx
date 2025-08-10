@@ -156,29 +156,29 @@ const LoginPage: React.FC = () => {
   return (
     <>
         <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-600">
-            <div className="particles">
-                {particles.map(p => <div key={p.id} className="particle" style={p.style} />)}
+            <div className="login-particles">
+                {particles.map(p => <div key={p.id} className="login-particle" style={p.style} />)}
             </div>
 
             <div
               className="relative z-10 w-full max-w-md rounded-[30px] border border-white/20 bg-white/10 px-10 pb-[60px] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] backdrop-blur-lg transition-transform duration-300 hover:-translate-y-1 max-[480px]:m-5 max-[480px]:px-8 max-[480px]:pb-10"
               style={{ paddingTop: isLoginMode ? '60px' : '80px' }}
             >
-                <div className="greeting animate-greeting-pop" key={greeting} style={{ animationDelay: '1s' }}>{greeting}</div>
-                <div className="robot-container">
-                    <div ref={robotRef} className="robot">
-                        <div className="robot-head">
-                            <div className="robot-eye left">
-                                <div ref={leftPupilRef} className="robot-pupil"></div>
+                  <div className="login-greeting login-animate-greeting-pop" key={greeting} style={{ animationDelay: '1s' }}>{greeting}</div>
+                <div className="login-robot-container">
+                    <div ref={robotRef} className="login-robot">
+                        <div className="login-robot-head">
+                            <div className="login-robot-eye left">
+                                <div ref={leftPupilRef} className="login-robot-pupil"></div>
                             </div>
-                            <div className="robot-eye right">
-                                <div ref={rightPupilRef} className="robot-pupil"></div>
+                            <div className="login-robot-eye right">
+                                <div ref={rightPupilRef} className="login-robot-pupil"></div>
                             </div>
-                            <div className="robot-mouth"></div>
+                            <div className="login-robot-mouth"></div>
                         </div>
-                        <div className="robot-body">
-                            <div className="robot-arm left"></div>
-                            <div className="robot-arm right"></div>
+                        <div className="login-robot-body">
+                            <div className="login-robot-arm left"></div>
+                            <div className="login-robot-arm right"></div>
                         </div>
                     </div>
                 </div>

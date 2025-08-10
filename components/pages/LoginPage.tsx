@@ -7,6 +7,7 @@ import { useToast } from '../../hooks/useToast';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import LoadingSpinner from '../LoadingSpinner';
 
 const greetingsList = [
     'Halo Guru! 👋',
@@ -106,7 +107,7 @@ const LoginPage: React.FC = () => {
     try {
         let response;
         if (formMode === 'login') {
-            if (!email || !password) throw new Error("Email dan password harus diisi.");
+            if (!email || !password) throw new Error('Email dan password harus diisi.');
             response = await login(email, password);
         } else {
             if (password !== confirmPassword) throw new Error('Password tidak cocok.');
@@ -114,17 +115,17 @@ const LoginPage: React.FC = () => {
             response = await signup(name, email, password);
             if (!response.error && response.data.user) {
                 toast.success('Pendaftaran berhasil! Silakan periksa email Anda untuk verifikasi.');
-                setFormMode('login'); // switch to login form
+                setFormMode('login');
             }
         }
 
         if (response.error) {
             throw response.error;
         }
-        
-        // onAuthStateChange in useAuth will handle navigation
     } catch (err: any) {
-        setError(err.message || (formMode === 'login' ? 'Gagal untuk login.' : 'Gagal untuk mendaftar.'));
+        const message = err.message || (formMode === 'login' ? 'Gagal untuk login.' : 'Gagal untuk mendaftar.');
+        setError(message);
+        toast.error(message);
     } finally {
         setLoading(false);
     }
@@ -152,6 +153,10 @@ const LoginPage: React.FC = () => {
   };
   
   const isLoginMode = formMode === 'login';
+
+  if (loading) {
+    return <LoadingSpinner fullScreen label="Memproses..." />;
+  }
 
   return (
     <>
@@ -189,33 +194,73 @@ const LoginPage: React.FC = () => {
                     {!isLoginMode && (
                         <div className="form-group">
                             <label htmlFor="full-name">Nama Lengkap</label>
-                            <input type="text" id="full-name" placeholder="Masukkan nama lengkap" required value={name} onChange={e => setName(e.target.value)} />
+                            <input
+                                type="text"
+                                id="full-name"
+                                placeholder="Masukkan nama lengkap"
+                                required
+                                autoComplete="name"
+                                autoFocus={!isLoginMode}
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                disabled={loading}
+                            />
                         </div>
                     )}
-                    
+
                     <div className="form-group">
                         <label htmlFor="email-address">Email</label>
-                        <input type="email" id="email-address" placeholder="Masukkan email" required value={email} onChange={e => setEmail(e.target.value)} />
+                        <input
+                            type="email"
+                            id="email-address"
+                            placeholder="Masukkan email"
+                            required
+                            autoComplete="email"
+                            autoFocus={isLoginMode}
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            disabled={loading}
+                        />
                     </div>
-                    
+
                     <div className="form-group">
                         <label htmlFor="password">Password</label>
-                        <input type="password" id="password" placeholder="Masukkan password" required value={password} onChange={e => setPassword(e.target.value)} />
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Masukkan password"
+                            required
+                            autoComplete={isLoginMode ? 'current-password' : 'new-password'}
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            disabled={loading}
+                        />
                     </div>
-                    
+
                     {!isLoginMode && (
                         <div className="form-group">
                             <label htmlFor="confirm-password">Konfirmasi Password</label>
-                            <input type="password" id="confirm-password" placeholder="Ulangi password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                            <input
+                                type="password"
+                                id="confirm-password"
+                                placeholder="Ulangi password"
+                                required
+                                autoComplete="new-password"
+                                value={confirmPassword}
+                                onChange={e => setConfirmPassword(e.target.value)}
+                                disabled={loading}
+                            />
                         </div>
                     )}
-                    
+
                     {error && (
-                        <p className="text-center text-sm text-yellow-300 mb-4">{error}</p>
+                        <p className="text-center text-sm text-yellow-300 mb-4" role="alert" aria-live="polite">
+                            {error}
+                        </p>
                     )}
-                    
-                    <button type="submit" className="login-btn" disabled={loading}>
-                        {loading ? 'Memproses...' : (isLoginMode ? 'Masuk' : 'Daftar')}
+
+                    <button type="submit" className="login-btn" disabled={loading} aria-busy={loading}>
+                        {isLoginMode ? 'Masuk' : 'Daftar'}
                     </button>
                 </form>
                 
@@ -246,6 +291,7 @@ const LoginPage: React.FC = () => {
                         required
                         value={forgotEmail}
                         onChange={e => setForgotEmail(e.target.value)}
+                        disabled={loading}
                     />
                 </div>
                 {error && <p className="text-sm text-red-400">{error}</p>}

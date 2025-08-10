@@ -13,6 +13,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Database } from '../../services/database.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOfflineStatus } from '../../hooks/useOfflineStatus';
+import LoadingSpinner from '../LoadingSpinner';
 
 type StudentRow = Database['public']['Tables']['students']['Row'];
 type ClassRow = Database['public']['Tables']['classes']['Row'];
@@ -259,7 +260,7 @@ const StudentsPage: React.FC = () => {
     };
 
     if (isLoading) {
-        return <div className="flex items-center justify-center h-screen"><div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+        return <LoadingSpinner fullScreen />;
     }
 
     const renderGridView = () => (

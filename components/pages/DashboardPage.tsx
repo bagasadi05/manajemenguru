@@ -7,6 +7,7 @@ import { CalendarIcon, UsersIcon, BookOpenIcon, ClockIcon, SparklesIcon, BrainCi
 import { Button } from '../ui/Button';
 import { GoogleGenAI, Type } from '@google/genai';
 import GreetingRobot from '../GreetingRobot';
+import LoadingSpinner from '../LoadingSpinner';
 import { supabase } from '../../services/supabase';
 import { Database } from '../../services/database.types';
 import { useQuery } from '@tanstack/react-query';
@@ -434,7 +435,7 @@ const DashboardPage: React.FC = () => {
     };
 
     if (isLoading) {
-        return <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950"><div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+        return <LoadingSpinner fullScreen />;
     }
 
     const { students = [], dailyAttendanceSummary = { Hadir: 0, Izin: 0, Sakit: 0, Alpha: 0 }, weeklyAttendance = [], classCount = 0, newReportsCount = 0, tasks = [], academicRecords = [], violations = [] } = dashboardData ?? {};

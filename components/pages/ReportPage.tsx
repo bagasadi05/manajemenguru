@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../ui/Button';
 import { PrinterIcon, ArrowLeftIcon, BrainCircuitIcon, PlusIcon, TrashIcon, SparklesIcon } from '../Icons';
+import LoadingSpinner from '../LoadingSpinner';
 import { AttendanceStatus } from '../../types';
 import { Database } from '../../services/database.types';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -339,7 +340,9 @@ const ReportPage: React.FC = () => {
     };
 
 
-    if (isLoading) { return <div className="flex items-center justify-center h-screen bg-gray-100"><div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>; }
+    if (isLoading) {
+        return <LoadingSpinner fullScreen containerClassName="bg-gray-100" />;
+    }
     if (isError) { return <div className="flex items-center justify-center h-screen bg-gray-100">Error: {(error as Error).message}</div>; }
 
     return (

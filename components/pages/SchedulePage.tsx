@@ -11,6 +11,7 @@ import { Database } from '../../services/database.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOfflineStatus } from '../../hooks/useOfflineStatus';
 import jsPDF from 'jspdf';
+import LoadingSpinner from '../LoadingSpinner';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -238,7 +239,7 @@ const SchedulePage: React.FC = () => {
         toast.success("Jadwal PDF berhasil diunduh!");
     };
     
-    if (pageLoading) return <div className="flex items-center justify-center h-screen"><div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+    if (pageLoading) return <LoadingSpinner fullScreen />;
 
     return (
         <div className="space-y-6">
@@ -306,7 +307,7 @@ const SchedulePage: React.FC = () => {
                 <div className="space-y-4">
                     {isAnalysisLoading ? (
                         <div className="text-center p-6">
-                            <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <LoadingSpinner sizeClass="w-8 h-8" colorClass="border-purple-500" className="mx-auto mb-4" />
                             <p className="text-gray-600 dark:text-gray-400">Menganalisis jadwal Anda...</p>
                         </div>
                     ) : (

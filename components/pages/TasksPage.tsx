@@ -10,6 +10,7 @@ import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { PlusIcon, PencilIcon, TrashIcon, CheckSquareIcon, CalendarIcon } from '../Icons';
 import { useOfflineStatus } from '../../hooks/useOfflineStatus';
+import LoadingSpinner from '../LoadingSpinner';
 
 type Task = Database['public']['Tables']['tasks']['Row'];
 type TaskStatus = Task['status'];
@@ -320,7 +321,11 @@ const TasksPage: React.FC = () => {
     };
 
     if (isLoading) {
-        return <div className="flex items-center justify-center h-full"><div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+        return (
+            <div className="flex items-center justify-center h-full">
+                <LoadingSpinner />
+            </div>
+        );
     }
 
     return (

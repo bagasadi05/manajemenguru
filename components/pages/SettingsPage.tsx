@@ -14,6 +14,7 @@ import { Database } from '../../services/database.types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOfflineStatus } from '../../hooks/useOfflineStatus';
 import { optimizeImage } from '../utils/image';
+import LoadingSpinner from '../LoadingSpinner';
 
 
 type ScheduleRow = Database['public']['Tables']['schedules']['Row'];
@@ -109,8 +110,18 @@ const ProfileSection: React.FC = () => {
                                 className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
                             />
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg" className="hidden" disabled={uploading}/>
-                            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !isOnline} className="absolute -bottom-1 -right-1 p-2 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform" aria-label="Ubah foto profil">
-                                {uploading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CameraIcon className="w-5 h-5" />}
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading || !isOnline}
+                                className="absolute -bottom-1 -right-1 p-2 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform"
+                                aria-label="Ubah foto profil"
+                            >
+                                {uploading ? (
+                                    <LoadingSpinner sizeClass="w-5 h-5" borderWidthClass="border-2" colorClass="border-white" />
+                                ) : (
+                                    <CameraIcon className="w-5 h-5" />
+                                )}
                             </button>
                         </div>
                         <div className="flex-1">

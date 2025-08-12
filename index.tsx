@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './src/index.css';
 import { registerPwa } from './src/pwa';
 
 const rootElement = document.getElementById('root');

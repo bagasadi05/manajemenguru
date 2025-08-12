@@ -3,12 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
-import { useStudentData, StudentDetailsData } from '@/hooks/useStudentData';
+import { useStudentData } from '@/hooks/useStudentData';
 import { useStudentMutations } from '@/hooks/useStudentMutations';
 import { optimizeImage } from '@/components/utils/image';
-import { AttendanceStatus } from '@/types';
-import { Database } from '@/services/database.types';
-import { GoogleGenAI, Type } from '@google/genai';
+import { generateStudentSummary } from '@/services/aiService';
+import { supabase } from '@/services/supabase';
 
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -28,9 +27,7 @@ import { ReportTimeline } from '@/components/features/student-detail/ReportTimel
 import { ViolationHistory } from '@/components/features/student-detail/ViolationHistory';
 import { StudentDetailModals } from '@/components/features/student-detail/StudentDetailModals';
 import { ModalState, AiSummary } from '@/components/features/student-detail/types';
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-type ReportRow = Database['public']['Tables']['reports']['Row'];
+import { AttendanceStatus } from '@/types';
 
 const StudentDetailPage: React.FC = () => {
     const { studentId } = useParams<{ studentId: string }>();
@@ -39,7 +36,7 @@ const StudentDetailPage: React.FC = () => {
     const toast = useToast();
     const isOnline = useOfflineStatus();
     
-    const { data: pageData, isLoading, isError, error: queryError } = useStudentData(studentId);
+    const { data: pageData, isLoading, isError, error: queryError, client: queryClient } = useStudentData(studentId);
     const { student, reports = [], attendanceRecords = [], academicRecords = [], quizPoints = [], violations = [], classAcademicRecords = [], classes = [] } = pageData || {};
 
     const {
@@ -53,67 +50,18 @@ const StudentDetailPage: React.FC = () => {
     const [editableAiSummary, setEditableAiSummary] = useState<AiSummary | null>(null);
     const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
-    const generateAndGetAiSummary = async (data: StudentDetailsData): Promise<AiSummary | null> => {
-        if (!data.student) return null;
+    const handleGenerateSummary = async () => {
+        if (!pageData) return;
         setAiSummaryState({ loading: true, error: null, content: null });
         setIsEditingAiSummary(false);
-
         try {
-            const { academicRecords, quizPoints, attendanceRecords, reports, violations } = data;
-            const attendanceSummary = attendanceRecords.reduce((acc, record) => { acc[record.status] = (acc[record.status] || 0) + 1; return acc; }, {} as Record<AttendanceStatus, number>);
-            const totalAttendanceDays = attendanceRecords.length;
-
-            const academicData = academicRecords.length > 0 ? academicRecords.map(r => `- Nilai Mapel ${r.subject}: ${r.score}, Catatan: ${r.notes}`).join('\n') : 'Tidak ada data nilai mata pelajaran.';
-            const activityData = quizPoints.length > 0 ? `Total ${quizPoints.length} poin keaktifan tercatat. Aktivitas: ${[...new Set(quizPoints.map(q => q.quiz_name))].join(', ')}.` : 'Tidak ada data poin keaktifan.';
-            const attendanceData = totalAttendanceDays > 0 ? Object.entries(attendanceSummary).map(([status, count]) => `- ${status}: ${count} hari`).join('\n') : 'Tidak ada data kehadiran.';
-            const reportData = reports.length > 0 ? reports.map(r => `- ${r.title}: ${r.notes}`).join('\n') : 'Tidak ada catatan perkembangan.';
-            const violationData = violations.length > 0 ? violations.map(v => `- ${v.description}: ${v.points} poin`).join('\n') : 'Tidak ada data pelanggaran.';
-            
-            const systemInstruction = `Anda adalah seorang psikolog pendidikan dan analis performa siswa yang sangat berpengalaman. Gaya tulisan Anda suportif, profesional, dan mudah dipahami oleh guru dan orang tua. Hindari jargon teknis dan bahasa yang terlalu kaku seperti AI. Ubah data mentah menjadi wawasan naratif yang dapat ditindaklanjuti. Anda HARUS memberikan output dalam format JSON yang valid sesuai skema.`;
-            
-            const prompt = `Analisis data siswa berikut untuk ${data.student.name} dan hasilkan ringkasan evaluasi yang komprehensif dalam format JSON. Tulis setiap bagian dalam bentuk paragraf yang mengalir alami dan informatif.
-
-**Data Nilai Mata Pelajaran:**
-${academicData}
-
-**Data Poin Keaktifan:**
-${activityData}
-
-**Ringkasan Kehadiran:**
-${attendanceData}
-
-**Catatan Guru Sebelumnya:**
-${reportData}
-
-**Data Pelanggaran:**
-${violationData}
-
-Isi struktur JSON sesuai dengan data yang diberikan.`;
-            
-            const responseSchema = {
-                type: Type.OBJECT,
-                properties: {
-                    general_evaluation: { type: Type.STRING, description: "Satu paragraf (2-4 kalimat) untuk evaluasi umum siswa, ditulis dalam bahasa yang alami." },
-                    strengths: { type: Type.STRING, description: "Satu paragraf (2-4 kalimat) yang merinci kekuatan utama siswa." },
-                    development_focus: { type: Type.STRING, description: "Satu paragraf (2-4 kalimat) yang menjelaskan area fokus untuk pengembangan siswa." },
-                    recommendations: { type: Type.STRING, description: "Satu paragraf (2-4 kalimat) dengan rekomendasi yang dapat ditindaklanjuti untuk guru/orang tua." },
-                },
-                required: ["general_evaluation", "strengths", "development_focus", "recommendations"]
-            };
-
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction, responseMimeType: "application/json", responseSchema } });
-            
-            const summaryContent = JSON.parse(response.text ?? '');
+            const summaryContent = await generateStudentSummary(pageData);
             setAiSummaryState({ loading: false, error: null, content: summaryContent });
             setEditableAiSummary(summaryContent);
-            return summaryContent;
-
         } catch (error: any) {
-            console.error("Gemini API Error:", error);
             const errorMessage = "Gagal menghasilkan analisis. Silakan coba lagi.";
             setAiSummaryState({ loading: false, error: errorMessage, content: null });
             toast.error(errorMessage);
-            return null;
         }
     };
 
@@ -122,7 +70,7 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
             toast.error((queryError as Error).message);
             navigate('/siswa', { replace: true });
         } else if (pageData && !aiSummaryState.content && !aiSummaryState.loading && !aiSummaryState.error && isOnline) {
-            generateAndGetAiSummary(pageData);
+            handleGenerateSummary();
         }
     }, [isError, queryError, toast, navigate, pageData, isOnline]);
 
@@ -133,7 +81,7 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
             updateAvatarMutation.mutate(URL.createObjectURL(file)); // Optimistic update
             const optimizedBlob = await optimizeImage(file, { maxWidth: 300, quality: 0.8 });
             const optimizedFile = new File([optimizedBlob], `${user.id}-student-${student.id}.jpg`, { type: 'image/jpeg' });
-            
+
             const filePath = `${user.id}/student_avatars/${student.id}-${Date.now()}.jpg`;
             const { error: uploadError } = await supabase.storage.from('teacher_assets').upload(filePath, optimizedFile, { upsert: true });
 
@@ -144,7 +92,9 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
             updateAvatarMutation.mutate(cacheBustedUrl);
         } catch(err: any) {
              toast.error(`Gagal mengunggah foto: ${err.message}`);
-             queryClient.invalidateQueries({ queryKey: ['studentDetails', studentId] });
+             if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['studentDetails', studentId] });
+             }
         }
     };
 
@@ -243,7 +193,7 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
                         ) : (
                             <div>
                                 <AiSummaryDisplay summary={aiSummaryState.content} />
-                                <div className="flex gap-2 mt-6"><Button onClick={() => setIsEditingAiSummary(true)} variant="outline" size="sm" disabled={!isOnline}><PencilIcon className="w-4 h-4 mr-2"/>Edit</Button><Button onClick={() => generateAndGetAiSummary(pageData!)} disabled={aiSummaryState.loading || !isOnline} variant="outline" size="sm">{aiSummaryState.loading ? 'Memuat...' : 'Buat Ulang'}</Button></div>
+                                <div className="flex gap-2 mt-6"><Button onClick={() => setIsEditingAiSummary(true)} variant="outline" size="sm" disabled={!isOnline}><PencilIcon className="w-4 h-4 mr-2"/>Edit</Button><Button onClick={handleGenerateSummary} disabled={aiSummaryState.loading || !isOnline} variant="outline" size="sm">{aiSummaryState.loading ? 'Memuat...' : 'Buat Ulang'}</Button></div>
                             </div>
                         ))}
                     </CardContent></Card>

@@ -9,8 +9,10 @@ import { useStudentData } from '@/hooks/useStudentData';
 import { useStudentMutations } from '@/hooks/useStudentMutations';
 import { useToast } from '@/hooks/useToast';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
+import * as aiService from '@/services/aiService';
 
-// Mock the custom hooks and react-router-dom
+// Mock services and hooks
+vi.mock('@/services/aiService');
 vi.mock('@/hooks/useAuth');
 vi.mock('@/hooks/useStudentData');
 vi.mock('@/hooks/useStudentMutations');
@@ -21,28 +23,16 @@ vi.mock('react-router-dom', async (importOriginal) => {
     return {
         ...actual,
         useNavigate: vi.fn(),
-        useParams: () => ({ studentId: '1' }), // Mock useParams directly
+        useParams: () => ({ studentId: '1' }),
     };
 });
 
 const mockStudentData = {
     student: { id: '1', name: 'Budi Pekerti', avatar_url: 'http://example.com/avatar.png', class_id: 'c1', classes: { id: 'c1', name: 'Kelas 1A' } },
-    reports: [],
-    attendanceRecords: [],
-    academicRecords: [],
-    quizPoints: [],
-    violations: [],
-    classAcademicRecords: [],
-    classes: [{ id: 'c1', name: 'Kelas 1A' }],
+    reports: [], attendanceRecords: [], academicRecords: [], quizPoints: [], violations: [], classAcademicRecords: [], classes: [{ id: 'c1', name: 'Kelas 1A' }],
 };
 
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            retry: false, // Disable retries for tests
-        },
-    },
-});
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 const renderComponent = () => {
     return render(
@@ -60,35 +50,33 @@ describe('StudentDetailPage', () => {
     let mockNavigate: vi.Mock;
 
     beforeEach(() => {
-        // Reset mocks before each test
         vi.resetAllMocks();
         mockNavigate = vi.fn();
 
-        // Setup default mocks
         (useNavigate as vi.Mock).mockReturnValue(mockNavigate);
         (useAuth as vi.Mock).mockReturnValue({ user: { id: 'user-123' } });
         (useToast as vi.Mock).mockReturnValue({ success: vi.fn(), error: vi.fn(), warning: vi.fn() });
         (useOfflineStatus as vi.Mock).mockReturnValue(true);
-        (useStudentData as vi.Mock).mockReturnValue({ data: mockStudentData, isLoading: false, isError: false, error: null });
+        (useStudentData as vi.Mock).mockReturnValue({ data: mockStudentData, isLoading: false, isError: false, error: null, client: queryClient });
         (useStudentMutations as vi.Mock).mockReturnValue({
-            updateStudentMutation: { mutate: vi.fn(), isPending: false },
-            updateAvatarMutation: { mutate: vi.fn(), isPending: false },
-            deleteStudentMutation: { mutate: vi.fn(), isPending: false },
-            createOrUpdateReportMutation: { mutate: vi.fn(), isPending: false },
-            deleteReportMutation: { mutate: vi.fn(), isPending: false },
-            createOrUpdateAcademicMutation: { mutate: vi.fn(), isPending: false },
-            deleteAcademicMutation: { mutate: vi.fn(), isPending: false },
-            createOrUpdateQuizPointMutation: { mutate: vi.fn(), isPending: false },
-            deleteQuizPointMutation: { mutate: vi.fn(), isPending: false },
-            createOrUpdateViolationMutation: { mutate: vi.fn(), isPending: false },
+            updateStudentMutation: { mutate: vi.fn(), isPending: false }, updateAvatarMutation: { mutate: vi.fn(), isPending: false },
+            deleteStudentMutation: { mutate: vi.fn(), isPending: false }, createOrUpdateReportMutation: { mutate: vi.fn(), isPending: false },
+            deleteReportMutation: { mutate: vi.fn(), isPending: false }, createOrUpdateAcademicMutation: { mutate: vi.fn(), isPending: false },
+            deleteAcademicMutation: { mutate: vi.fn(), isPending: false }, createOrUpdateQuizPointMutation: { mutate: vi.fn(), isPending: false },
+            deleteQuizPointMutation: { mutate: vi.fn(), isPending: false }, createOrUpdateViolationMutation: { mutate: vi.fn(), isPending: false },
             deleteViolationMutation: { mutate: vi.fn(), isPending: false },
+        });
+        (aiService.generateStudentSummary as vi.Mock).mockResolvedValue({
+            general_evaluation: 'Test summary', strengths: 'Sangat baik', development_focus: 'Fokus', recommendations: 'Rekomendasi'
         });
     });
 
-    it('should render student name and class', () => {
+    it('should render student name and class, and wait for AI summary', async () => {
         renderComponent();
         expect(screen.getByText('Budi Pekerti')).toBeInTheDocument();
         expect(screen.getByText('Kelas 1A')).toBeInTheDocument();
+        // Wait for the async useEffect to finish
+        expect(await screen.findByText('Test summary')).toBeInTheDocument();
     });
 
     it('should show loading spinner when data is loading', () => {
@@ -105,31 +93,33 @@ describe('StudentDetailPage', () => {
 
     it('should open the edit student modal when "Edit" button is clicked', async () => {
         renderComponent();
+        expect(await screen.findByText('Test summary')).toBeInTheDocument();
 
-        const editButton = screen.getByRole('button', { name: /edit/i });
-        fireEvent.click(editButton);
+        // Find the specific "Edit" button for the student profile at the top
+        const allEditButtons = screen.getAllByRole('button', { name: /edit/i });
+        const profileEditButton = allEditButtons.find(btn => btn.textContent === 'Edit');
+        expect(profileEditButton).toBeInTheDocument();
+
+        fireEvent.click(profileEditButton!);
 
         await waitFor(() => {
             expect(screen.getByRole('heading', { name: /Edit Profil Siswa/i })).toBeInTheDocument();
         });
     });
 
-    it('should render all stat cards with correct values', () => {
+    it('should render all stat cards with correct values', async () => {
         renderComponent();
-
         const presenceCard = screen.getByText('Kehadiran').parentElement!;
         expect(within(presenceCard).getByText('100%')).toBeInTheDocument();
-
         const averageScoreCard = screen.getByText('Rata-rata Nilai').parentElement!;
         expect(within(averageScoreCard).getByText('0')).toBeInTheDocument();
-
         const reportCard = screen.getByText('Total Laporan').parentElement!;
         expect(within(reportCard).getByText('0')).toBeInTheDocument();
-
         const alphaCard = screen.getByText('Total Alpha').parentElement!;
         expect(within(alphaCard).getByText('0')).toBeInTheDocument();
-
         const violationCard = screen.getByText('Poin Pelanggaran').parentElement!;
         expect(within(violationCard).getByText('0')).toBeInTheDocument();
+        // Wait for the async useEffect to finish to avoid act warning
+        expect(await screen.findByText('Test summary')).toBeInTheDocument();
     });
 });

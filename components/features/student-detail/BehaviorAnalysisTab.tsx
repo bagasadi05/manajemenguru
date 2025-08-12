@@ -3,12 +3,10 @@ import { Database } from '@/services/database.types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
-import { GoogleGenAI } from '@google/genai';
+import { generateBehaviorAnalysis } from '@/services/aiService';
 
 type AttendanceRow = Database['public']['Tables']['attendance']['Row'];
 type ViolationRow = Database['public']['Tables']['violations']['Row'];
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: AttendanceRow[]; violations: ViolationRow[] }> = ({ studentName, attendance, violations }) => {
     const [analysis, setAnalysis] = useState('');
@@ -32,38 +30,15 @@ export const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: At
 
     const maxAbsences = useMemo(() => Math.max(...absencesByDay.map(([, count]) => count), 0), [absencesByDay]);
 
-    const generateAnalysis = async () => {
+    const runAnalysis = async () => {
         if (!isOnline) {
             setAnalysis("Analisis AI memerlukan koneksi internet.");
             return;
         }
         setIsLoading(true);
         try {
-            const systemInstruction = "Anda adalah seorang konselor sekolah yang menganalisis data perilaku siswa. Berikan analisis singkat, jelas, dan profesional dalam 1-2 paragraf. Fokus pada pola yang muncul dan berikan saran konstruktif jika diperlukan.";
-
-            const attendanceSummary = attendance.length > 0
-                ? `Total ${attendance.filter(a => a.status === 'Alpha').length} kali alpha, ${attendance.filter(a => a.status === 'Sakit').length} kali sakit, ${attendance.filter(a => a.status === 'Izin').length} kali izin.`
-                : 'Tidak ada data absensi.';
-
-            const violationSummary = violations.length > 0
-                ? `Total ${violations.length} pelanggaran dengan total ${violations.reduce((sum, v) => sum + v.points, 0)} poin.`
-                : 'Tidak ada catatan pelanggaran.';
-
-            const prompt = `
-                Analisis data perilaku untuk siswa bernama ${studentName}.
-
-                Data Absensi:
-                ${attendanceSummary}
-                Rincian alpha per hari: ${JSON.stringify(Object.fromEntries(absencesByDay))}
-
-                Data Pelanggaran:
-                ${violationSummary}
-
-                Berikan analisis singkat tentang pola perilaku yang mungkin terlihat dari data ini.
-            `;
-
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction } });
-            setAnalysis(response.text ?? '');
+            const result = await generateBehaviorAnalysis(studentName, attendance, violations);
+            setAnalysis(result);
         } catch (error) {
             console.error(error);
             setAnalysis("Gagal memuat analisis perilaku. Silakan coba lagi.");
@@ -72,8 +47,8 @@ export const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: At
     };
 
     useEffect(() => {
-        generateAnalysis();
-    }, [attendance, violations]); // Re-run if data changes
+        runAnalysis();
+    }, [studentName, attendance, violations]);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -119,11 +94,11 @@ export const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: At
                     ) : (
                         <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{analysis}</p>
                     )}
-                    <Button onClick={generateAnalysis} disabled={isLoading || !isOnline} variant="outline" size="sm" className="mt-4">
+                    <Button onClick={runAnalysis} disabled={isLoading || !isOnline} variant="outline" size="sm" className="mt-4">
                         {isLoading ? 'Menganalisis...' : 'Analisis Ulang'}
                     </Button>
                 </CardContent>
             </Card>
         </div>
     )
-}
+};

@@ -236,10 +236,10 @@ const AttendancePage: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 bg-gray-50 dark:bg-gray-950/50 p-4 md:p-6 rounded-lg">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 text-transparent bg-clip-text">Pendataan Absensi</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-blue-500 text-transparent bg-clip-text">Pendataan Absensi</h1>
                     <p className="mt-1 text-gray-500 dark:text-gray-400">Pilih kelas dan tanggal, lalu kelola kehadiran siswa dengan mudah.</p>
                 </div>
                 <div className="flex gap-2 self-end md:self-center">
@@ -249,71 +249,130 @@ const AttendancePage: React.FC = () => {
             </header>
 
             <Card>
-                <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label htmlFor="class-select" className="block text-sm font-medium mb-1">Pilih Kelas</label><Select id="class-select" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} disabled={isLoadingClasses}><option value="" disabled>-- Pilih Kelas --</option>{classes?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></div>
-                    <div><label htmlFor="date-select" className="block text-sm font-medium mb-1">Tanggal</label><Input id="date-select" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} /></div>
+                <CardContent className="p-4 flex flex-col md:flex-row gap-4">
+                    <div className='flex-1'><label htmlFor="class-select" className="block text-sm font-medium mb-1">Pilih Kelas</label><Select id="class-select" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} disabled={isLoadingClasses}><option value="" disabled>-- Pilih Kelas --</option>{classes?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></div>
+                    <div className='flex-1'><label htmlFor="date-select" className="block text-sm font-medium mb-1">Tanggal</label><Input id="date-select" type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} /></div>
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {statusOptions.map(({ value, label, icon: Icon, color }) => (
-                    <button
-                        key={value}
-                        type="button"
-                        onClick={() => setQuickMarkStatus(quickMarkStatus === value ? null : value)}
-                        aria-label={`Pilih ${label} untuk mode cepat`}
-                        aria-pressed={quickMarkStatus === value}
-                        className={`p-4 rounded-xl flex items-center gap-3 transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus-visible:ring-4 ring-${color}-500/50 ${quickMarkStatus === value ? 'ring-4 bg-white dark:bg-gray-800' : 'bg-white/60 dark:bg-gray-900/60'}`}
-                    >
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-${color}-100 dark:bg-${color}-900/40`}>
-                            <Icon className={`w-6 h-6 text-${color}-600 dark:text-${color}-300`} />
-                        </div>
-                        <div>
-                            <p className="text-xl font-bold">{attendanceSummary[value]}</p>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</p>
-                        </div>
-                    </button>
-                ))}
+            {/* Summary and Quick Mark Section */}
+            <div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {statusOptions.map(({ value, label, icon: Icon, color }) => (
+                        <Card
+                            key={value}
+                            className={`p-3 transition-all border-2 ${quickMarkStatus === value ? `border-blue-500 shadow-lg` : 'dark:border-gray-700'}`}
+                        >
+                            <div className="flex items-start justify-between">
+                                <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-${color}-100 dark:bg-gray-800`}>
+                                    <Icon className={`w-5 h-5 text-${color}-500`} />
+                                </div>
+                                <p className="text-3xl font-bold text-right">{attendanceSummary[value]}</p>
+                            </div>
+                            <div className="mt-2">
+                                <p className="text-sm font-medium">{label}</p>
+                                <Button
+                                    variant={quickMarkStatus === value ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setQuickMarkStatus(quickMarkStatus === value ? null : value)}
+                                    className="w-full mt-1 text-xs"
+                                    aria-pressed={quickMarkStatus === value}
+                                >
+                                    {quickMarkStatus === value ? 'Mode Aktif' : `Tandai Cepat`}
+                                </Button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+                {quickMarkStatus && (
+                    <div className="mt-3 text-center p-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30 rounded-lg">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                            Mode Cepat Aktif: Klik pada siswa untuk menandai sebagai <span className="font-bold">{quickMarkStatus}</span>.
+                        </p>
+                    </div>
+                )}
             </div>
             
             <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{quickMarkStatus ? `Mode Cepat: Klik siswa untuk menandai sebagai "${quickMarkStatus}"` : `Siswa Belum Diabsen: ${unmarkedStudents.length}`}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Siswa Belum Diabsen: {unmarkedStudents.length}</p>
                 <Button variant="outline" onClick={markRestAsPresent} disabled={unmarkedStudents.length === 0}>Tandai Sisa Hadir</Button>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {isLoadingStudents ? Array.from({length: 8}).map((_, i) => (<div key={i} className="h-40 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse"></div>))
-                : students?.map(student => {
+            <div className="space-y-3">
+                {isLoadingStudents ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="h-16 w-full bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse"></div>
+                    ))
+                ) : students?.map(student => {
                     const record = attendanceRecords[student.id];
-                    const statusColor = record ? statusOptions.find(o => o.value === record.status)?.color : 'gray';
+                    const statusColor = record ? statusOptions.find(o => o.value === record.status)?.color ?? 'gray' : 'gray';
+                    const statusColorMap: { [key: string]: string } = {
+                        green: 'border-green-500',
+                        yellow: 'border-yellow-500',
+                        blue: 'border-blue-500',
+                        red: 'border-red-500',
+                        gray: 'dark:border-gray-800'
+                    };
+                    const statusBgColorMap: { [key: string]: string } = {
+                        green: 'bg-green-500',
+                        yellow: 'bg-yellow-500',
+                        blue: 'bg-blue-500',
+                        red: 'bg-red-500',
+                    };
+
                     return (
-                        <Card
-                            key={student.id}
-                            onClick={() => handleQuickMark(student.id)}
-                            className={`p-4 flex flex-col gap-3 transition-all ${quickMarkStatus ? 'cursor-pointer hover:ring-2 hover:ring-blue-500' : ''} border-l-4 border-${statusColor}-500`}
-                            tabIndex={quickMarkStatus ? 0 : undefined}
-                            role={quickMarkStatus ? 'button' : undefined}
-                            onKeyDown={(e) => {
-                                if (quickMarkStatus && (e.key === 'Enter' || e.key === ' ')) {
-                                    e.preventDefault();
-                                    handleQuickMark(student.id);
-                                }
-                            }}
-                            aria-label={quickMarkStatus ? `Tandai ${student.name} sebagai ${quickMarkStatus}` : undefined}
-                        >
-                            <div className="flex items-center gap-3"><img src={student.avatar_url} alt={student.name} className="w-10 h-10 rounded-full" /><p className="font-semibold flex-grow">{student.name}</p></div>
-                            <div className="flex justify-around gap-1">{statusOptions.map(opt => (
-                                <button
-                                    key={opt.value}
-                                    onClick={(e) => { e.stopPropagation(); handleStatusChange(student.id, opt.value); }}
-                                    aria-label={opt.label}
-                                    className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${record?.status === opt.value ? `bg-${opt.color}-500 text-white shadow-md` : `bg-gray-200 dark:bg-gray-700 hover:bg-${opt.color}-200 dark:hover:bg-${opt.color}-600`}`}
-                                >
-                                    <opt.icon className="w-5 h-5" />
-                                </button>
-                            ))}</div>
-                            {(record?.status === 'Izin' || record?.status === 'Sakit') && <Input placeholder="Tambah catatan..." value={record.note} onChange={(e) => handleNoteChange(student.id, e.target.value)} onClick={e => e.stopPropagation()} className="text-sm h-9" />}
-                        </Card>
+                        <div key={student.id} className={`rounded-lg shadow-sm overflow-hidden bg-white dark:bg-gray-900 border dark:border-gray-800 border-l-2 ${statusColorMap[statusColor]}`}>
+                            <div
+                                onClick={() => handleQuickMark(student.id)}
+                                className={`p-3 transition-all ${quickMarkStatus ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50' : ''}`}
+                                tabIndex={quickMarkStatus ? 0 : -1}
+                                role={quickMarkStatus ? 'button' : 'listitem'}
+                                onKeyDown={(e) => {
+                                    if (quickMarkStatus && (e.key === 'Enter' || e.key === ' ')) {
+                                        e.preventDefault();
+                                        handleQuickMark(student.id);
+                                    }
+                                }}
+                                aria-label={quickMarkStatus ? `Tandai ${student.name} sebagai ${quickMarkStatus}` : `${student.name}, status saat ini: ${record?.status || 'Belum ditandai'}`}
+                            >
+                                <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                                    {/* Student Info */}
+                                    <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
+                                        <img src={student.avatar_url} alt={student.name} className="w-10 h-10 rounded-full" />
+                                        <p className="font-semibold flex-grow">{student.name}</p>
+                                    </div>
+
+                                    {/* Status Segmented Control */}
+                                    <div className="flex justify-end w-full sm:w-auto">
+                                        <div className="flex items-center p-1 rounded-full bg-gray-200 dark:bg-gray-700/50">
+                                            {statusOptions.map(opt => (
+                                                <button
+                                                    key={opt.value}
+                                                    onClick={(e) => { e.stopPropagation(); handleStatusChange(student.id, opt.value); }}
+                                                    aria-label={opt.label}
+                                                    aria-pressed={record?.status === opt.value}
+                                                    className={`w-8 h-8 flex items-center justify-center rounded-full transition-all text-gray-500 dark:text-gray-400 ${record?.status === opt.value ? `${statusBgColorMap[opt.color]} text-white shadow` : `hover:bg-gray-300/50 dark:hover:bg-gray-600/50`}`}
+                                                >
+                                                    <opt.icon className="w-5 h-5" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Note Input - appears below the card */}
+                            {(record?.status === 'Izin' || record?.status === 'Sakit') && (
+                                <div className="p-3 bg-gray-50 dark:bg-gray-800/50 border-t dark:border-gray-700">
+                                    <Input
+                                        placeholder="Tambah catatan (contoh: surat dokter terlampir)"
+                                        value={record.note}
+                                        onChange={(e) => handleNoteChange(student.id, e.target.value)}
+                                        onClick={e => e.stopPropagation()}
+                                        className="text-sm h-9 w-full"
+                                    />
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </div>

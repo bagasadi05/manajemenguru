@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../services/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { Database } from '../../services/database.types';
@@ -14,6 +13,7 @@ import { GraduationCapIcon, PrinterIcon, ShieldAlertIcon, CheckSquareIcon, Arrow
 import { violationList } from '../../services/violations.data';
 import { parseScoresWithAi } from '@/services/aiService';
 import { generateBulkReport } from '@/services/pdfService';
+import * as db from '@/services/databaseService';
 
 type ClassRow = Database['public']['Tables']['classes']['Row'];
 type StudentRow = Database['public']['Tables']['students']['Row'];
@@ -27,9 +27,7 @@ const actionCards: { mode: InputMode; title: string; description: string; icon: 
     { mode: 'bulk_report', title: 'Cetak Rapor Massal', description: 'Cetak beberapa rapor siswa dari satu kelas dalam satu file.', icon: PrinterIcon },
 ];
 
-interface Step1Props {
-    onModeSelect: (mode: InputMode) => void;
-}
+interface Step1Props { onModeSelect: (mode: InputMode) => void; }
 
 const Step1_ModeSelection: React.FC<Step1Props> = ({ onModeSelect }) => (
     <div className="animate-fade-in">
@@ -159,13 +157,13 @@ const MassInputPage: React.FC = () => {
 
     const { data: classes, isLoading: isLoadingClasses } = useQuery({
         queryKey: ['classes', user?.id],
-        queryFn: async (): Promise<ClassRow[]> => { const { data, error } = await supabase.from('classes').select('*').eq('user_id', user!.id); if (error) throw error; return data || []; },
+        queryFn: async () => { const { data, error } = await db.getClasses(user!.id); if (error) throw error; return data || []; },
         enabled: !!user,
     });
     
     const { data: students, isLoading: isLoadingStudents } = useQuery({
         queryKey: ['studentsOfClass', selectedClass],
-        queryFn: async (): Promise<StudentRow[]> => { if (!selectedClass) return []; const { data, error } = await supabase.from('students').select('*').eq('class_id', selectedClass).order('name'); if (error) throw error; return data || []; },
+        queryFn: async () => { if (!selectedClass) return []; const { data, error } = await db.getStudentsByClass(selectedClass); if (error) throw error; return data || []; },
         enabled: !!selectedClass,
     });
     
@@ -207,17 +205,17 @@ const MassInputPage: React.FC = () => {
     const isAllSelected = students ? selectedStudentIds.size === students.length && students.length > 0 : false;
     
     const saveQuizScoresMutation = useMutation({
-        mutationFn: async (records: Database['public']['Tables']['quiz_points']['Insert'][]) => { const { error } = await supabase.from('quiz_points').insert(records); if (error) throw error; },
+        mutationFn: (records: Omit<Database['public']['Tables']['quiz_points']['Row'], 'id' | 'created_at'>[]) => db.addQuizPoints(records),
         onSuccess: () => { toast.success("Poin keaktifan berhasil disimpan!"); setSelectedStudentIds(new Set()); },
         onError: (error: Error) => toast.error(`Gagal: ${error.message}`),
     });
     const saveSubjectGradesMutation = useMutation({
-        mutationFn: async (records: Database['public']['Tables']['academic_records']['Insert'][]) => { const { error } = await supabase.from('academic_records').insert(records); if (error) throw error; },
+        mutationFn: (records: Omit<Database['public']['Tables']['academic_records']['Row'], 'id' | 'created_at'>[]) => db.addAcademicRecords(records),
         onSuccess: () => { toast.success("Nilai mata pelajaran berhasil disimpan!"); setScores({}); queryClient.invalidateQueries({ queryKey: ['studentDetails'] }); },
         onError: (error: Error) => toast.error(`Gagal: ${error.message}`),
     });
     const saveViolationsMutation = useMutation({
-        mutationFn: async (records: Database['public']['Tables']['violations']['Insert'][]) => { const { error } = await supabase.from('violations').insert(records); if (error) throw error; },
+        mutationFn: (records: Omit<Database['public']['Tables']['violations']['Row'], 'id' | 'created_at'>[]) => db.addViolations(records),
         onSuccess: () => { toast.success("Pelanggaran berhasil disimpan!"); setSelectedStudentIds(new Set()); queryClient.invalidateQueries({ queryKey: ['studentDetails'] }); },
         onError: (error: Error) => toast.error(`Gagal: ${error.message}`),
     });

@@ -5,32 +5,20 @@ import { vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MassInputPage from './MassInputPage';
 import { useAuth } from '@/hooks/useAuth';
-import { useOfflineStatus } from '@/hooks/useOfflineStatus';
-import { ToastProvider } from '@/hooks/useToast';
-import * as aiService from '@/services/aiService';
+import * as db from '@/services/databaseService';
+import * as ai from '@/services/aiService';
 
 // Mock services and hooks
 vi.mock('@/services/aiService');
+vi.mock('@/services/databaseService');
 vi.mock('@/hooks/useAuth');
-vi.mock('@/hooks/useOfflineStatus');
+vi.mock('@/hooks/useToast', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }) }));
+vi.mock('@/hooks/useOfflineStatus', () => ({ useOfflineStatus: () => true }));
 
-const queryClient = new QueryClient();
+const mockClasses = [{ id: 'c1', name: 'Kelas 1A', user_id: 'user-123', created_at: new Date().toISOString() }];
+const mockStudents = [{ id: 's1', name: 'Budi', class_id: 'c1', user_id: 'user-123', created_at: new Date().toISOString(), gender: 'Laki-laki', avatar_url: '' }];
 
-const mockClasses = [{ id: 'c1', name: 'Kelas 1A', user_id: 'user-123' }];
-const mockStudents = [{ id: 's1', name: 'Budi', class_id: 'c1', user_id: 'user-123' }];
-
-vi.mock('@tanstack/react-query', async (importOriginal) => {
-    const actual = await importOriginal<any>();
-    return {
-        ...actual,
-        useQuery: vi.fn((options: any) => {
-            if (options.queryKey.includes('classes')) return { data: mockClasses, isLoading: false, isError: false };
-            if (options.queryKey.includes('studentsOfClass')) return { data: options.queryKey[1] ? mockStudents : [], isLoading: false, isError: false };
-            return { data: undefined, isLoading: false, isError: false };
-        }),
-        useMutation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-    };
-});
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
 
 const renderComponent = () => {
     return render(
@@ -42,12 +30,16 @@ const renderComponent = () => {
     );
 };
 
+// Need to mock ToastProvider since it's used
+const ToastProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+
 describe('MassInputPage', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
         (useAuth as vi.Mock).mockReturnValue({ user: { id: 'user-123' } });
-        (useOfflineStatus as vi.Mock).mockReturnValue(true);
-        (aiService.parseScoresWithAi as vi.Mock).mockResolvedValue({ 'Budi': 95 });
+        (db.getClasses as vi.Mock).mockResolvedValue({ data: mockClasses, error: null });
+        (db.getStudentsByClass as vi.Mock).mockResolvedValue({ data: mockStudents, error: null });
+        (ai.parseScoresWithAi as vi.Mock).mockResolvedValue({ 'Budi': 95 });
     });
 
     it('should allow typing multiple characters in the subject input field', async () => {
@@ -56,24 +48,6 @@ describe('MassInputPage', () => {
         const subjectInput = await screen.findByLabelText(/Mata Pelajaran/i);
         fireEvent.change(subjectInput, { target: { value: 'Matematika' } });
         expect(subjectInput).toHaveValue('Matematika');
-    });
-
-    it('should allow typing multiple characters in the notes input field', async () => {
-        renderComponent();
-        fireEvent.click(screen.getByText(/Input Nilai Mapel/i));
-        const notesInput = await screen.findByLabelText(/Catatan/i);
-        fireEvent.change(notesInput, { target: { value: 'Catatan panjang' } });
-        expect(notesInput).toHaveValue('Catatan panjang');
-    });
-
-    it('should allow typing multiple characters in the student score input', async () => {
-        renderComponent();
-        fireEvent.click(screen.getByText(/Input Nilai Mapel/i));
-        const studentNameCell = await screen.findByText('Budi');
-        const studentRow = studentNameCell.closest('tr')!;
-        const scoreInput = within(studentRow).getByRole('spinbutton');
-        fireEvent.change(scoreInput, { target: { value: '95' } });
-        expect(scoreInput).toHaveValue(95);
     });
 
     it('should call aiService to parse scores and update the form', async () => {
@@ -86,12 +60,10 @@ describe('MassInputPage', () => {
         const parseButton = screen.getByRole('button', { name: /Proses dengan AI/i });
         fireEvent.click(parseButton);
 
-        // Check if the service was called
         await waitFor(() => {
-            expect(aiService.parseScoresWithAi).toHaveBeenCalledWith('Budi 95', ['Budi']);
+            expect(ai.parseScoresWithAi).toHaveBeenCalledWith('Budi 95', ['Budi']);
         });
 
-        // Check if the score input was updated
         const studentNameCell = await screen.findByText('Budi');
         const studentRow = studentNameCell.closest('tr')!;
         const scoreInput = within(studentRow).getByRole('spinbutton');

@@ -61,6 +61,30 @@ Isi struktur JSON sesuai dengan data yang diberikan.`;
 };
 
 /**
+ * Generates a teacher's note for a student's report card.
+ * @param studentName The student's name.
+ * @param academicSummary A summary of their academic performance.
+ * @param behaviorSummary A summary of their behavior.
+ * @returns A string containing the teacher's note.
+ */
+export const generateTeacherNote = async (studentName: string, academicSummary: string, behaviorSummary: string, attendanceSummary: string) => {
+    const systemInstruction = `Anda adalah seorang guru wali kelas yang bijaksana, suportif, dan profesional. Tugas Anda adalah menulis paragraf "Catatan Wali Kelas" untuk rapor siswa. Catatan ini harus komprehensif, merangkum performa siswa secara holistik, dan memberikan motivasi. Tulis dalam satu paragraf yang mengalir (3-5 kalimat). Hindari penggunaan daftar atau poin.`;
+    const prompt = `Buatkan draf "Catatan Wali Kelas" untuk siswa bernama ${studentName}.
+
+    Berikut adalah data ringkas sebagai dasar analisis Anda:
+    - **Analisis Akademik:** ${academicSummary}
+    - **Analisis Perilaku:** ${behaviorSummary}
+    - **Kehadiran:** ${attendanceSummary}.
+
+    Tugas Anda:
+    Sintesis semua informasi di atas menjadi satu paragraf catatan wali kelas yang kohesif. Pastikan catatan tersebut mencakup evaluasi umum, menyoroti kekuatan atau area yang perlu ditingkatkan, dan diakhiri dengan kalimat rekomendasi atau motivasi yang positif.
+    `;
+
+    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction }});
+    return (response.text ?? '').replace(/\\n/g, ' ');
+};
+
+/**
  * Generates a behavioral analysis for a student.
  * @param studentName - The name of the student.
  * @param attendance - The student's attendance records.

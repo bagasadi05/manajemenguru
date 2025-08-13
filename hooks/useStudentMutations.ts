@@ -1,15 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/services/supabase';
 import { useToast } from './useToast';
 import { Database } from '@/services/database.types';
 import { useNavigate } from 'react-router-dom';
+import * as db from '@/services/databaseService';
+import * as storage from '@/services/storageService';
 
+type User = Database['public']['Tables']['users']['Row'];
 type StudentUpdate = Database['public']['Tables']['students']['Update'];
 type ReportRow = Database['public']['Tables']['reports']['Row'];
 type AcademicRecordRow = Database['public']['Tables']['academic_records']['Row'];
 type QuizPointRow = Database['public']['Tables']['quiz_points']['Row'];
 type ViolationInsert = Database['public']['Tables']['violations']['Insert'];
-type User = Database['public']['Tables']['users']['Row'];
+
 
 export const useStudentMutations = (studentId: string | undefined, user: User | null) => {
     const queryClient = useQueryClient();
@@ -26,19 +28,13 @@ export const useStudentMutations = (studentId: string | undefined, user: User | 
     };
 
     const updateStudentMutation = useMutation({
-        mutationFn: async (updateData: StudentUpdate) => {
-            const { error } = await supabase.from('students').update(updateData).eq('id', studentId!);
-            if (error) throw error;
-        },
+        mutationFn: (updateData: StudentUpdate) => db.updateStudent(studentId!, updateData),
         onSuccess: () => onSuccess("Profil siswa berhasil diperbarui!"),
         onError: (e: Error) => onError(e, "Gagal memperbarui profil"),
     });
 
     const updateAvatarMutation = useMutation({
-        mutationFn: async (avatar_url: string) => {
-            const { error } = await supabase.from('students').update({ avatar_url }).eq('id', studentId!);
-            if (error) throw error;
-        },
+        mutationFn: (avatar_url: string) => db.updateStudent(studentId!, { avatar_url }),
         onSuccess: () => {
             toast.success("Foto profil siswa berhasil diperbarui!");
             queryClient.invalidateQueries({ queryKey: ['studentDetails', studentId] });
@@ -48,14 +44,9 @@ export const useStudentMutations = (studentId: string | undefined, user: User | 
     });
 
     const deleteStudentMutation = useMutation({
-        mutationFn: async () => {
+        mutationFn: () => {
             if (!studentId) throw new Error("Student ID tidak ditemukan.");
-            const dependentTables = ['reports', 'attendance', 'academic_records', 'violations', 'quiz_points'];
-            const deletePromises = dependentTables.map(table => supabase.from(table).delete().eq('student_id', studentId));
-            const results = await Promise.all(deletePromises);
-            for (const result of results) { if (result.error) throw new Error(`Gagal menghapus data terkait: ${result.error.message}`); }
-            const { error: studentError } = await supabase.from('students').delete().eq('id', studentId);
-            if (studentError) throw new Error(`Gagal menghapus data siswa: ${studentError.message}`);
+            return db.deleteStudent(studentId);
         },
         onSuccess: () => {
             toast.success('Siswa berhasil dihapus beserta semua data terkait.');
@@ -69,106 +60,75 @@ export const useStudentMutations = (studentId: string | undefined, user: User | 
         mutationFn: async ({ payload, file }: { payload: Omit<ReportRow, 'created_at' | 'id'> & {id?: string}, file: File | null }) => {
             let attachment_url = payload.attachment_url;
             if (file && user && studentId) {
-                const filePath = `${user.id}/${studentId}-${Date.now()}-${file.name}`;
-                const { error: uploadError } = await supabase.storage.from('teacher_assets').upload(filePath, file);
-                if (uploadError) throw uploadError;
-                attachment_url = supabase.storage.from('teacher_assets').getPublicUrl(filePath).data.publicUrl;
+                const { upload, url } = await storage.uploadStudentAsset(user.id, studentId, file);
+                if (upload.error) throw upload.error;
+                attachment_url = url;
             }
 
             const { id, ...dataToMutate } = { ...payload, attachment_url, user_id: user!.id, student_id: studentId! };
 
-            if (id) {
-                const { error } = await supabase.from('reports').update(dataToMutate).eq('id', id);
-                if (error) throw error;
-            } else {
-                const { error } = await supabase.from('reports').insert(dataToMutate);
-                if (error) throw error;
-            }
+            return id ? db.updateReport(id, dataToMutate) : db.addReport(dataToMutate);
         },
         onSuccess: () => onSuccess("Laporan berhasil disimpan!"),
         onError: (e: Error) => onError(e, "Gagal menyimpan laporan"),
     });
 
     const deleteReportMutation = useMutation({
-        mutationFn: async (reportId: string) => { const { error } = await supabase.from('reports').delete().eq('id', reportId); if (error) throw error; },
+        mutationFn: (reportId: string) => db.deleteReport(reportId),
         onSuccess: () => onSuccess("Laporan berhasil dihapus."),
         onError: (e: Error) => onError(e, "Gagal menghapus laporan"),
     });
 
     const createOrUpdateAcademicMutation = useMutation({
-        mutationFn: async (payload: Omit<AcademicRecordRow, 'created_at' | 'id'> & { id?: string }) => {
+        mutationFn: (payload: Omit<AcademicRecordRow, 'created_at' | 'id'> & { id?: string }) => {
             const { id, ...dataToMutate } = { ...payload, user_id: user!.id, student_id: studentId! };
-            if(id) {
-                const { error } = await supabase.from('academic_records').update(dataToMutate).eq('id', id);
-                if (error) throw error;
-            } else {
-                const { error } = await supabase.from('academic_records').insert(dataToMutate);
-                if (error) throw error;
-            }
+            return id ? db.updateAcademicRecord(id, dataToMutate) : db.addAcademicRecord(dataToMutate);
         },
         onSuccess: () => onSuccess("Nilai mata pelajaran berhasil disimpan!"),
         onError: (e: Error) => onError(e, "Gagal menyimpan nilai"),
     });
 
     const deleteAcademicMutation = useMutation({
-        mutationFn: async (recordId: string) => { const { error } = await supabase.from('academic_records').delete().eq('id', recordId); if (error) throw error; },
+        mutationFn: (recordId: string) => db.deleteAcademicRecord(recordId),
         onSuccess: () => onSuccess("Nilai mata pelajaran berhasil dihapus."),
         onError: (e: Error) => onError(e, "Gagal menghapus nilai"),
     });
 
     const createOrUpdateQuizPointMutation = useMutation({
-        mutationFn: async (payload: Omit<QuizPointRow, 'created_at' | 'id'> & { id?: number }) => {
+        mutationFn: (payload: Omit<QuizPointRow, 'created_at' | 'id'> & { id?: number }) => {
             const { id, ...dataToMutate } = { ...payload, user_id: user!.id, student_id: studentId! };
-            if (id) {
-                const { error } = await supabase.from('quiz_points').update(dataToMutate).eq('id', id);
-                if (error) throw error;
-            } else {
-                const { error } = await supabase.from('quiz_points').insert(dataToMutate);
-                if (error) throw error;
-            }
+            return id ? db.updateQuizPoint(id, dataToMutate) : db.addQuizPoints([dataToMutate]);
         },
         onSuccess: () => onSuccess("Poin keaktifan berhasil disimpan!"),
         onError: (e: Error) => onError(e, "Gagal menyimpan poin"),
     });
 
     const deleteQuizPointMutation = useMutation({
-        mutationFn: async (recordId: number) => { const { error } = await supabase.from('quiz_points').delete().eq('id', recordId); if (error) throw error; },
+        mutationFn: (recordId: number) => db.deleteQuizPoint(recordId),
         onSuccess: () => onSuccess("Poin keaktifan berhasil dihapus."),
         onError: (e: Error) => onError(e, "Gagal menghapus poin"),
     });
 
     const createOrUpdateViolationMutation = useMutation({
-        mutationFn: async (payload: ViolationInsert) => {
+        mutationFn: (payload: ViolationInsert) => {
             const { id, ...dataToMutate } = { ...payload, user_id: user!.id, student_id: studentId! };
-            if(id) {
-                const { error } = await supabase.from('violations').update(dataToMutate).eq('id', id as any);
-                if (error) throw error;
-            } else {
-                const { error } = await supabase.from('violations').insert(dataToMutate);
-                if (error) throw error;
-            }
+            return id ? db.updateViolation(id as string, dataToMutate) : db.addViolations([dataToMutate]);
         },
         onSuccess: () => onSuccess("Data pelanggaran berhasil disimpan!"),
         onError: (e: Error) => onError(e, "Gagal menyimpan pelanggaran"),
     });
 
     const deleteViolationMutation = useMutation({
-        mutationFn: async (violationId: string) => { const { error } = await supabase.from('violations').delete().eq('id', violationId); if (error) throw error; },
+        mutationFn: (violationId: string) => db.deleteViolation(violationId),
         onSuccess: () => onSuccess("Data pelanggaran berhasil dihapus."),
         onError: (e: Error) => onError(e, "Gagal menghapus pelanggaran"),
     });
 
     return {
-        updateStudentMutation,
-        updateAvatarMutation,
-        deleteStudentMutation,
-        createOrUpdateReportMutation,
-        deleteReportMutation,
-        createOrUpdateAcademicMutation,
-        deleteAcademicMutation,
-        createOrUpdateQuizPointMutation,
-        deleteQuizPointMutation,
-        createOrUpdateViolationMutation,
-        deleteViolationMutation,
+        updateStudentMutation, updateAvatarMutation, deleteStudentMutation,
+        createOrUpdateReportMutation, deleteReportMutation,
+        createOrUpdateAcademicMutation, deleteAcademicMutation,
+        createOrUpdateQuizPointMutation, deleteQuizPointMutation,
+        createOrUpdateViolationMutation, deleteViolationMutation,
     };
 };

@@ -26,12 +26,6 @@ type StudentsPageData = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const gradientPalettes = [
-    'from-violet-500 to-purple-600', 'from-sky-500 to-indigo-600',
-    'from-emerald-500 to-teal-600', 'from-rose-500 to-pink-600',
-    'from-amber-500 to-orange-600', 'from-lime-500 to-green-600',
-];
-
 interface ConfirmActionModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -59,6 +53,41 @@ const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({ isOpen, onClose
     </Modal>
 );
 
+const ClassListModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    classes: ClassRow[];
+    onAdd: () => void;
+    onEdit: (classData: ClassRow) => void;
+    onDelete: (classId: string) => void;
+    isLoading: boolean;
+    isOnline: boolean;
+}> = ({ isOpen, onClose, classes, onAdd, onEdit, onDelete, isLoading, isOnline }) => (
+    <Modal isOpen={isOpen} onClose={onClose} title="Kelola Kelas" icon={<GraduationCapIcon className="w-5 h-5"/>}>
+        <div className="space-y-4">
+            <Button size="sm" onClick={onAdd} className="w-full" disabled={!isOnline || isLoading}>
+                <PlusIcon className="w-4 h-4 mr-2" />Tambah Kelas Baru
+            </Button>
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                {classes.sort((a,b) => a.name.localeCompare(b.name)).map(c => (
+                    <div key={c.id} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800/50 rounded-lg transition-all">
+                        <span className="font-semibold">{c.name}</span>
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" onClick={() => onEdit(c)} disabled={!isOnline || isLoading}>
+                                <PencilIcon className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => onDelete(c.id)} disabled={!isOnline || isLoading}>
+                                <TrashIcon className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+                {classes.length === 0 && <p className="text-center text-gray-500 dark:text-gray-400 py-4">Belum ada kelas.</p>}
+            </div>
+        </div>
+    </Modal>
+);
+
 const StudentsPage: React.FC = () => {
     const toast = useToast();
     const { user } = useAuth();
@@ -76,7 +105,8 @@ const StudentsPage: React.FC = () => {
     const [studentModalMode, setStudentModalMode] = useState<'add' | 'edit'>('add');
     const [currentStudent, setCurrentStudent] = useState<StudentRow | null>(null);
 
-    const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+    const [isClassListModalOpen, setIsClassListModalOpen] = useState(false);
+    const [isClassFormModalOpen, setIsClassFormModalOpen] = useState(false);
     const [classModalMode, setClassModalMode] = useState<'add' | 'edit'>('add');
     const [currentClass, setCurrentClass] = useState<ClassRow | null>(null);
     const [classNameInput, setClassNameInput] = useState('');
@@ -132,13 +162,13 @@ const StudentsPage: React.FC = () => {
 
     const { mutate: addClass, isPending: isAddingClass } = useMutation({
         mutationFn: async (newClass: Database['public']['Tables']['classes']['Insert']) => { const { error } = await supabase.from('classes').insert(newClass); if (error) throw error; },
-        onSuccess: () => { toast.success("Kelas berhasil ditambahkan."); queryClient.invalidateQueries({ queryKey: ['studentsPageData'] }); setIsClassModalOpen(false); },
+        onSuccess: () => { toast.success("Kelas berhasil ditambahkan."); queryClient.invalidateQueries({ queryKey: ['studentsPageData'] }); setIsClassFormModalOpen(false); },
         onError: (error: Error) => toast.error(error.message),
     });
 
     const { mutate: updateClass, isPending: isUpdatingClass } = useMutation({
         mutationFn: async ({ id, ...updateData }: { id: string } & Database['public']['Tables']['classes']['Update']) => { const { error } = await supabase.from('classes').update(updateData).eq('id', id); if (error) throw error; },
-        onSuccess: () => { toast.success("Kelas berhasil diperbarui."); queryClient.invalidateQueries({ queryKey: ['studentsPageData'] }); setIsClassModalOpen(false); },
+        onSuccess: () => { toast.success("Kelas berhasil diperbarui."); queryClient.invalidateQueries({ queryKey: ['studentsPageData'] }); setIsClassFormModalOpen(false); },
         onError: (error: Error) => toast.error(error.message),
     });
 
@@ -208,11 +238,12 @@ const StudentsPage: React.FC = () => {
         });
     };
     
-    const handleOpenClassModal = (mode: 'add' | 'edit', classData: ClassRow | null = null) => {
+    const handleOpenClassFormModal = (mode: 'add' | 'edit', classData: ClassRow | null = null) => {
         setClassModalMode(mode);
         setCurrentClass(classData);
         setClassNameInput(classData ? classData.name : '');
-        setIsClassModalOpen(true);
+        setIsClassListModalOpen(false); // Close list modal
+        setIsClassFormModalOpen(true); // Open form modal
     };
 
     const handleClassFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -268,21 +299,24 @@ const StudentsPage: React.FC = () => {
             if (classGroup.students.length === 0) return null;
             return (
                 <div key={classGroup.id} className="mb-8 animate-fade-in-up animation-delay-200">
-                    <h3 className="flex items-center gap-3 text-2xl font-bold mb-6"><span className="p-3 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl"><GraduationCapIcon className="h-6 w-6 text-indigo-500 dark:text-indigo-400"/></span><span className="text-gray-800 dark:text-gray-200">{classGroup.name}</span></h3>
+                    <h3 className="flex items-center gap-3 text-2xl font-bold mb-6">
+                        <span className="p-3 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl">
+                            <GraduationCapIcon className="h-6 w-6 text-indigo-500 dark:text-indigo-400"/>
+                        </span>
+                        <span className="text-gray-800 dark:text-gray-200">{classGroup.name}</span>
+                    </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {classGroup.students.map((student, index) => {
-                            return (
-                                <Link to={`/siswa/${student.id}`} key={student.id} className="group block focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950 rounded-2xl">
-                                    <div className={`relative p-6 h-full text-white overflow-hidden rounded-2xl transition-all duration-300 ease-in-out bg-gradient-to-br ${gradientPalettes[index % gradientPalettes.length]} group-hover:shadow-2xl group-hover:shadow-purple-500/30 group-hover:-translate-y-2`}>
-                                        <div className="absolute inset-0 bg-repeat bg-center [background-image:linear-gradient(135deg,_rgba(255,255,255,0.05)_25%,_transparent_25%,_transparent_50%,_rgba(255,255,255,0.05)_50%,_rgba(255,255,255,0.05)_75%,_transparent_75%,_transparent)] bg-[length:30px_30px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                        <div className="relative z-10 flex flex-col items-center text-center">
-                                            <div className="relative mb-4"><img src={student.avatar_url} alt={student.name} className="w-28 h-28 rounded-full object-cover border-4 border-white/50 shadow-lg transition-transform duration-300 group-hover:scale-110"/></div>
-                                            <h4 className="font-bold text-lg text-shadow-md">{student.name}</h4>
-                                        </div>
-                                    </div>
-                                </Link>
-                            )
-                        })}
+                        {classGroup.students.map(student => (
+                            <Link to={`/siswa/${student.id}`} key={student.id} className="group block focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950 rounded-2xl">
+                                <Card className="h-full overflow-hidden transition-all duration-300 ease-in-out group-hover:shadow-xl group-hover:shadow-indigo-500/10 group-hover:-translate-y-1 border-white/20 dark:border-gray-800/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg">
+                                    <CardContent className="p-6 flex flex-col items-center text-center">
+                                        <img src={student.avatar_url} alt={student.name} className="w-28 h-28 rounded-full object-cover mb-4 shadow-lg transition-transform duration-300 group-hover:scale-105"/>
+                                        <h4 className="font-bold text-lg text-gray-900 dark:text-gray-100">{student.name}</h4>
+                                        <p className="text-sm text-indigo-500 dark:text-indigo-400 font-medium">{classMap.get(student.class_id) || 'N/A'}</p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
                     </div>
                 </div>
             );
@@ -320,7 +354,7 @@ const StudentsPage: React.FC = () => {
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 animate-fade-in-up">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 text-transparent bg-clip-text">Manajemen Siswa & Kelas</h2>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 text-transparent bg-clip-text">Manajemen Siswa</h2>
                 <div className="flex w-full md:w-auto items-center gap-2">
                     <div className="flex-grow md:flex-grow-0 w-full md:w-48 relative">
                         <svg className="w-5 h-5 text-gray-400 absolute top-1/2 left-4 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -332,22 +366,7 @@ const StudentsPage: React.FC = () => {
                     </div>
                      <Button onClick={() => setIsAiModalOpen(true)} variant="outline" className="whitespace-nowrap" disabled={!isOnline} title={!isOnline ? "AI Assistant requires an internet connection" : ""}><SparklesIcon className="w-4 h-4 mr-2 text-purple-500"/>Asisten AI</Button>
                     <Button onClick={() => handleOpenStudentModal('add')} className="whitespace-nowrap" disabled={!isOnline} title={!isOnline ? "Cannot add student while offline" : ""}><PlusIcon className="w-4 h-4 mr-2" />Siswa</Button>
-                </div>
-            </div>
-
-            <div className="relative p-6 text-white overflow-hidden rounded-2xl bg-gradient-to-br from-purple-700 to-indigo-800 shadow-xl shadow-purple-500/20 animate-fade-in-up animation-delay-100">
-                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full"></div><div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-white/10 rounded-full"></div>
-                <div className="relative z-10">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-                        <h3 className="text-xl font-bold">Kelola Kelas</h3>
-                        <Button size="sm" onClick={() => handleOpenClassModal('add')} className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/20 w-full sm:w-auto" disabled={!isOnline} title={!isOnline ? "Cannot add class while offline" : ""}>
-                            <PlusIcon className="w-4 h-4 mr-2" />Tambah Kelas
-                        </Button>
-                    </div>
-                    <div className="space-y-3">
-                        {classes.sort((a,b) => a.name.localeCompare(b.name)).map(c => (<div key={c.id} className="flex items-center justify-between p-3 bg-black/20 border border-white/10 rounded-lg transition-all hover:bg-black/30"><span className="font-semibold">{c.name}</span><div className="flex items-center gap-1"><Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10" onClick={() => handleOpenClassModal('edit', c)} disabled={!isOnline}><PencilIcon className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-white hover:bg-red-500/40" onClick={() => handleDeleteClassConfirm(c.id)} disabled={!isOnline}><TrashIcon className="h-4 w-4" /></Button></div></div>))}
-                         {classes.length === 0 && <p className="text-center text-indigo-200 py-4">Belum ada kelas. Silakan tambahkan kelas baru.</p>}
-                    </div>
+                    <Button onClick={() => setIsClassListModalOpen(true)} variant="outline" className="whitespace-nowrap" disabled={!isOnline}><GraduationCapIcon className="w-4 h-4 mr-2"/>Kelola Kelas</Button>
                 </div>
             </div>
 
@@ -378,7 +397,17 @@ const StudentsPage: React.FC = () => {
                     <div className="flex justify-end gap-2 pt-4"><Button type="button" variant="ghost" onClick={() => setIsStudentModalOpen(false)}>Batal</Button><Button type="submit" disabled={isAddingStudent || isUpdatingStudent || !isOnline}>{studentModalMode === 'add' ? (isAddingStudent ? 'Menambahkan...' : 'Tambah Siswa') : (isUpdatingStudent ? 'Menyimpan...' : 'Simpan Perubahan')}</Button></div>
                 </form>
             </Modal>
-            <Modal title={classModalMode === 'add' ? 'Tambah Kelas Baru' : 'Edit Kelas'} isOpen={isClassModalOpen} onClose={() => setIsClassModalOpen(false)} icon={classModalMode === 'add' ? <PlusIcon className="h-5 w-5"/> : <PencilIcon className="h-5 w-5"/>}><form onSubmit={handleClassFormSubmit} className="space-y-4"><div><label htmlFor="class-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Kelas</label><Input id="class-name" value={classNameInput} onChange={(e) => setClassNameInput(e.target.value)} placeholder="cth. Kelas 12A" required /></div><div className="flex justify-end gap-2 pt-4"><Button type="button" variant="ghost" onClick={() => setIsClassModalOpen(false)}>Batal</Button><Button type="submit" disabled={isAddingClass || isUpdatingClass || !isOnline}>{classModalMode === 'add' ? (isAddingClass ? 'Menambahkan...' : 'Tambah Kelas') : (isUpdatingClass ? 'Menyimpan...' : 'Simpan Perubahan')}</Button></div></form></Modal>
+            <ClassListModal
+                isOpen={isClassListModalOpen}
+                onClose={() => setIsClassListModalOpen(false)}
+                classes={classes}
+                onAdd={() => handleOpenClassFormModal('add')}
+                onEdit={(c) => handleOpenClassFormModal('edit', c)}
+                onDelete={handleDeleteClassConfirm}
+                isLoading={isDeletingClass}
+                isOnline={isOnline}
+            />
+            <Modal title={classModalMode === 'add' ? 'Tambah Kelas Baru' : 'Edit Kelas'} isOpen={isClassFormModalOpen} onClose={() => { setIsClassFormModalOpen(false); setIsClassListModalOpen(true); }} icon={classModalMode === 'add' ? <PlusIcon className="h-5 w-5"/> : <PencilIcon className="h-5 w-5"/>}><form onSubmit={handleClassFormSubmit} className="space-y-4"><div><label htmlFor="class-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Kelas</label><Input id="class-name" value={classNameInput} onChange={(e) => setClassNameInput(e.target.value)} placeholder="cth. Kelas 12A" required /></div><div className="flex justify-end gap-2 pt-4"><Button type="button" variant="ghost" onClick={() => { setIsClassFormModalOpen(false); setIsClassListModalOpen(true); }}>Batal</Button><Button type="submit" disabled={isAddingClass || isUpdatingClass || !isOnline}>{classModalMode === 'add' ? (isAddingClass ? 'Menambahkan...' : 'Tambah Kelas') : (isUpdatingClass ? 'Menyimpan...' : 'Simpan Perubahan')}</Button></div></form></Modal>
             <ConfirmActionModal 
                 isOpen={confirmModalState.isOpen}
                 onClose={() => setConfirmModalState(prev => ({ ...prev, isOpen: false }))}

@@ -144,29 +144,47 @@ const StudentDetailPage: React.FC = () => {
 
     return (
         <div className="space-y-8 animate-fade-in-up">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="flex-shrink-0" aria-label="Kembali"><ArrowLeftIcon className="h-5 w-5" /></Button>
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
-                            <img src={student.avatar_url} alt={student.name} className="w-16 h-16 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-md" />
+            <div className="flex items-center gap-4 mb-4">
+                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="flex-shrink-0" aria-label="Kembali">
+                    <ArrowLeftIcon className="h-5 w-5" />
+                </Button>
+                <h2 className="text-2xl font-bold tracking-tight">Profil Siswa</h2>
+            </div>
+
+            {/* Header Card */}
+            <Card className="overflow-hidden">
+                <div className="relative bg-gradient-to-br from-purple-700 to-indigo-800 h-24 p-4">
+                     <div className="absolute inset-0 bg-repeat bg-center [background-image:linear-gradient(135deg,_rgba(255,255,255,0.05)_25%,_transparent_25%,_transparent_50%,_rgba(255,255,255,0.05)_50%,_rgba(255,255,255,0.05)_75%,_transparent_75%,_transparent)] bg-[length:30px_30px]"></div>
+                </div>
+                <CardContent className="relative pt-16 text-center">
+                    <div className="absolute left-1/2 -translate-x-1/2 -top-12">
+                        <div className="relative w-24 h-24">
+                            <img src={student.avatar_url} alt={student.name} className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-950 shadow-lg" />
                             <input type="file" ref={avatarFileInputRef} onChange={(e) => e.target.files && handleAvatarUpload(e.target.files[0])} accept="image/png, image/jpeg" className="hidden" disabled={updateAvatarMutation.isPending}/>
-                            <button type="button" onClick={() => avatarFileInputRef.current?.click()} disabled={updateAvatarMutation.isPending || !isOnline} className="absolute -bottom-1 -right-1 p-1.5 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform" aria-label="Ubah foto profil">
+                            <button
+                                type="button"
+                                onClick={() => avatarFileInputRef.current?.click()}
+                                disabled={updateAvatarMutation.isPending || !isOnline}
+                                className="absolute -bottom-1 -right-1 p-1.5 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full shadow-md hover:scale-110 transition-transform"
+                                aria-label="Ubah foto profil"
+                            >
                                 {updateAvatarMutation.isPending ? <LoadingSpinner sizeClass="w-4 h-4" /> : <CameraIcon className="w-4 h-4" />}
                             </button>
                         </div>
-                        <div>
-                            <h2 className="text-3xl font-bold tracking-tight">{student.name}</h2>
-                            <p className="text-lg text-gray-500">{studentClass?.name || 'Tanpa Kelas'}</p>
-                        </div>
                     </div>
-                </div>
-                <div className="flex flex-wrap items-center justify-start md:justify-end gap-2 w-full md:w-auto">
-                    <Button size="sm" variant="outline" onClick={() => setModalState({type: 'editStudent'})} disabled={!isOnline}><PencilIcon className="h-4 w-4 mr-2" />Edit</Button>
-                    <Button size="sm" variant="default" onClick={() => navigate(`/cetak-rapot/${studentId}`)}><FileTextIcon className="h-4 w-4 mr-2" />Cetak Rapor</Button>
-                </div>
-            </div>
+                    <h2 className="text-3xl font-bold tracking-tight mt-2">{student.name}</h2>
+                    <p className="text-lg text-gray-500 dark:text-gray-400">{studentClass?.name || 'Tanpa Kelas'}</p>
+
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setModalState({type: 'editStudent'})} disabled={!isOnline}>
+                            <PencilIcon className="h-4 w-4 mr-2" />Edit Profil
+                        </Button>
+                        <Button size="sm" variant="default" onClick={() => navigate(`/cetak-rapot/${studentId}`)}>
+                            <FileTextIcon className="h-4 w-4 mr-2" />Cetak Rapor
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
             
             {/* Stat Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

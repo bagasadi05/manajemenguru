@@ -8,7 +8,7 @@ export const StatCard: React.FC<{ icon: React.FC<any>, label: string, value: str
                  <Icon className="w-6 h-6 text-white" />
             </div>
             <div>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{value}</p>
+                <p className="text-3xl font-bold text-gray-800 dark:text-gray-100">{value}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
             </div>
         </div>

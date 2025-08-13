@@ -67,7 +67,7 @@ const generateSingleReportPage = (doc: jsPDF, data: ReportData, reportHeader: an
 
     doc.setFont('Tinos', 'bold'); doc.setFontSize(12); doc.text('C. Kepribadian dan Sikap', margin, y); y += 15;
     doc.setFontSize(11); doc.text('1. Ketidakhadiran', margin, y); y += 15;
-    autoTable(doc, { body: [[{ content: `Sakit: ${attendanceSummary.Sakit} hari`, styles: { halign: 'center' } }, { content: `Izin: ${attendanceSummary.Izin} hari`, styles: { halign: 'center' } }, { content: `Alpha: ${attendanceSummary.Alpha} hari`, styles: { halign: 'center' } }]], startY: y, theme: 'grid', styles: { font: 'Tinos', fontSize: 10, cellPadding: 5 } });
+    autoTable(doc, { body: [[{ content: `Sakit: ${attendanceSummary.Sakit} hari`, styles: { halign: 'center' } }, { content: `Izin: ${attendanceSummary.Izin} hari`, styles: { halign: 'center' } }, { content: `Alpa: ${attendanceSummary.Alpha} hari`, styles: { halign: 'center' } }]], startY: y, theme: 'grid', styles: { font: 'Tinos', fontSize: 10, cellPadding: 5 } });
     y = (doc as any).lastAutoTable.finalY + 15;
 
     doc.setFont('Tinos', 'bold'); doc.setFontSize(11); doc.text('2. Catatan Perilaku', margin, y); y += 12;

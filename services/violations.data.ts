@@ -42,7 +42,7 @@ export const violationList: ViolationItem[] = [
     { code: '30', description: 'Kabur pada jam pelajaran', points: 7, category: 'Sedang' },
     { code: '31', description: 'Bawa HandPhone ke sekolah', points: 7, category: 'Sedang' },
     { code: '32', description: 'Membawa komik, majalah, atau novel', points: 7, category: 'Sedang' },
-    { code: '33', description: 'Alpha >3 hari tanpa keterangan', points: 7, category: 'Sedang' },
+    { code: '33', description: 'Alpa >3 hari tanpa keterangan', points: 7, category: 'Sedang' },
     { code: '34', description: 'Membuat keterangan palsu', points: 7, category: 'Sedang' },
     { code: '35', description: 'Rambut panjang, Punk (L)', points: 7, category: 'Sedang' },
     { code: '36', description: 'Mencat rambut dan bertato (L/P)', points: 7, category: 'Sedang' },

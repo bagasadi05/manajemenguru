@@ -80,7 +80,7 @@ export const generateBehaviorAnalysis = async (studentName: string, attendance: 
 
     const systemInstruction = "Anda adalah seorang konselor sekolah yang menganalisis data perilaku siswa. Berikan analisis singkat, jelas, dan profesional dalam 1-2 paragraf. Fokus pada pola yang muncul dan berikan saran konstruktif jika diperlukan.";
 
-    const attendanceSummary = attendance.length > 0 ? `Total ${attendance.filter(a => a.status === 'Alpha').length} kali alpha, ${attendance.filter(a => a.status === 'Sakit').length} kali sakit, ${attendance.filter(a => a.status === 'Izin').length} kali izin.` : 'Tidak ada data absensi.';
+    const attendanceSummary = attendance.length > 0 ? `Total ${attendance.filter(a => a.status === 'Alpha').length} kali alpa, ${attendance.filter(a => a.status === 'Sakit').length} kali sakit, ${attendance.filter(a => a.status === 'Izin').length} kali izin.` : 'Tidak ada data absensi.';
     const violationSummary = violations.length > 0 ? `Total ${violations.length} pelanggaran dengan total ${violations.reduce((sum, v) => sum + v.points, 0)} poin.` : 'Tidak ada catatan pelanggaran.';
 
     const prompt = `
@@ -88,7 +88,7 @@ export const generateBehaviorAnalysis = async (studentName: string, attendance: 
 
         Data Absensi:
         ${attendanceSummary}
-        Rincian alpha per hari: ${JSON.stringify(absencesByDay)}
+        Rincian alpa per hari: ${JSON.stringify(absencesByDay)}
 
         Data Pelanggaran:
         ${violationSummary}

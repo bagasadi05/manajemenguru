@@ -54,8 +54,8 @@ export const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: At
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Pola Ketidakhadiran (Alpha)</CardTitle>
-                    <CardDescription>Visualisasi jumlah ketidakhadiran (alpha) berdasarkan hari.</CardDescription>
+                    <CardTitle>Pola Ketidakhadiran (Alpa)</CardTitle>
+                    <CardDescription>Visualisasi jumlah ketidakhadiran (alpa) berdasarkan hari.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {attendance.filter(a=>a.status === 'Alpha').length > 0 ? (
@@ -75,7 +75,7 @@ export const BehaviorAnalysisTab: React.FC<{ studentName: string; attendance: At
                             ))}
                         </div>
                     ) : (
-                        <p className="text-center text-gray-500 py-8">Tidak ada data alpha.</p>
+                        <p className="text-center text-gray-500 py-8">Tidak ada data alpa.</p>
                     )}
                 </CardContent>
             </Card>

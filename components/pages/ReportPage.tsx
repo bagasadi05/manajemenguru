@@ -211,7 +211,7 @@ const ReportPage: React.FC = () => {
             Berikut adalah data ringkas sebagai dasar analisis Anda:
             - **Analisis Akademik:** ${academicSummary}
             - **Analisis Perilaku:** ${behaviorSummary}
-            - **Kehadiran:** Sakit ${editableAttendanceSummary.Sakit} hari, Izin ${editableAttendanceSummary.Izin} hari, Alpha ${editableAttendanceSummary.Alpha} hari.
+            - **Kehadiran:** Sakit ${editableAttendanceSummary.Sakit} hari, Izin ${editableAttendanceSummary.Izin} hari, Alpa ${editableAttendanceSummary.Alpha} hari.
             
             Tugas Anda:
             Sintesis semua informasi di atas menjadi satu paragraf catatan wali kelas yang kohesif. Pastikan catatan tersebut mencakup evaluasi umum, menyoroti kekuatan atau area yang perlu ditingkatkan, dan diakhiri dengan kalimat rekomendasi atau motivasi yang positif.
@@ -295,7 +295,7 @@ const ReportPage: React.FC = () => {
                 body: [[
                     { content: `Sakit: ${editableAttendanceSummary.Sakit} hari`, styles: { halign: 'center' } },
                     { content: `Izin: ${editableAttendanceSummary.Izin} hari`, styles: { halign: 'center' } },
-                    { content: `Alpha: ${editableAttendanceSummary.Alpha} hari`, styles: { halign: 'center' } }
+                    { content: `Alpa: ${editableAttendanceSummary.Alpha} hari`, styles: { halign: 'center' } }
                 ]],
                 startY: y,
                 theme: 'grid',
@@ -489,7 +489,7 @@ const ReportPage: React.FC = () => {
                      <div className="grid grid-cols-3 gap-4 text-sm pl-4">
                         {Object.entries(editableAttendanceSummary).map(([status, count]) => (
                             <div key={status} className="border border-black p-2 text-center">
-                                <p className="font-bold">{status}</p>
+                                <p className="font-bold">{status === 'Alpha' ? 'Alpa' : status}</p>
                                 <p>{count} hari</p>
                             </div>
                         ))}

@@ -173,7 +173,7 @@ const StudentDetailPage: React.FC = () => {
                 <StatCard icon={CheckCircleIcon} label="Kehadiran" value={`${attendancePercentage}%`} color="from-green-500 to-emerald-400" />
                 <StatCard icon={BarChartIcon} label="Rata-rata Nilai" value={averageScore} color="from-sky-500 to-blue-400" />
                 <StatCard icon={FileTextIcon} label="Total Laporan" value={reports.length} color="from-amber-500 to-yellow-400" />
-                <StatCard icon={XCircleIcon} label="Total Alpha" value={totalAlphaDays} color="from-red-500 to-rose-400" />
+                <StatCard icon={XCircleIcon} label="Total Alpa" value={totalAlphaDays} color="from-red-500 to-rose-400" />
                 <StatCard icon={ShieldAlertIcon} label="Poin Pelanggaran" value={totalViolationPoints} color="from-orange-500 to-red-400" />
             </div>
 

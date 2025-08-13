@@ -5,7 +5,7 @@ import { Card, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
-import { CheckCircleIcon, DownloadCloudIcon, BrainCircuitIcon, UserCheckIcon, UserMinusIcon, UserPlusIcon } from '../Icons';
+import { CheckCircleIcon, DownloadCloudIcon, BrainCircuitIcon, UserCheckIcon, UserMinusIcon, UserPlusIcon, XCircleIcon, SearchIcon, ChevronDownIcon } from '../Icons';
 import LoadingSpinner from '../LoadingSpinner';
 import { useToast } from '../../hooks/useToast';
 import { supabase } from '../../services/supabase';
@@ -34,7 +34,7 @@ const statusOptions = [
     { value: AttendanceStatus.Hadir, label: 'Hadir', icon: CheckCircleIcon, color: 'green' },
     { value: AttendanceStatus.Izin, label: 'Izin', icon: UserCheckIcon, color: 'yellow' },
     { value: AttendanceStatus.Sakit, label: 'Sakit', icon: UserPlusIcon, color: 'blue' },
-    { value: AttendanceStatus.Alpha, label: 'Alpha', icon: UserMinusIcon, color: 'red' },
+    { value: AttendanceStatus.Alpha, label: 'Alpa', icon: UserMinusIcon, color: 'red' },
 ];
 
 const AttendancePage: React.FC = () => {
@@ -47,7 +47,9 @@ const AttendancePage: React.FC = () => {
 
     const [selectedClass, setSelectedClass] = useState<string>('');
     const [selectedDate, setSelectedDate] = useState<string>(today);
+    const [searchTerm, setSearchTerm] = useState('');
     const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
+    const [statusFilter, setStatusFilter] = useState<AttendanceStatus | null>(null);
     const [quickMarkStatus, setQuickMarkStatus] = useState<AttendanceStatus | null>(null);
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -57,6 +59,8 @@ const AttendancePage: React.FC = () => {
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [aiAnalysisResult, setAiAnalysisResult] = useState<AiAnalysis | null>(null);
     const [isAiLoading, setIsAiLoading] = useState(false);
+    const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const actionsMenuRef = useRef<HTMLDivElement>(null);
 
     const { data: classes, isLoading: isLoadingClasses } = useQuery({
         queryKey: ['classes', user?.id],
@@ -73,6 +77,18 @@ const AttendancePage: React.FC = () => {
             setSelectedClass(classes[0].id);
         }
     }, [classes, selectedClass]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
+                setIsActionsMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [actionsMenuRef]);
 
     const { data: students, isLoading: isLoadingStudents } = useQuery({
         queryKey: ['studentsForAttendance', selectedClass],
@@ -129,6 +145,21 @@ const AttendancePage: React.FC = () => {
         return students.filter(student => !attendanceRecords[student.id]);
     }, [students, attendanceRecords]);
 
+    const selectedClassName = useMemo(() => {
+        if (!selectedClass || !classes) return 'Memuat kelas...';
+        return classes.find(c => c.id === selectedClass)?.name || 'Kelas tidak ditemukan';
+    }, [selectedClass, classes]);
+
+    const formattedDate = useMemo(() => {
+        try {
+            return new Date(selectedDate).toLocaleDateString('id-ID', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+        } catch (e) {
+            return "Tanggal tidak valid"
+        }
+    }, [selectedDate]);
+
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendanceRecords(prev => ({
             ...prev,
@@ -143,6 +174,58 @@ const AttendancePage: React.FC = () => {
     const handleQuickMark = (studentId: string) => {
         if (quickMarkStatus) handleStatusChange(studentId, quickMarkStatus);
     };
+
+    const handleBulkMark = (status: AttendanceStatus) => {
+        if (!students) return;
+        if (window.confirm(`Apakah Anda yakin ingin menandai semua ${students.length} siswa sebagai "${status}"? Ini akan menimpa data yang ada.`)) {
+            const updatedRecords = { ...attendanceRecords };
+            students.forEach(student => {
+                updatedRecords[student.id] = { status, note: '' };
+            });
+            setAttendanceRecords(updatedRecords);
+            toast.info(`Semua siswa ditandai sebagai ${status}. Jangan lupa simpan.`);
+        }
+    };
+
+    const filteredAndSortedStudents = useMemo(() => {
+        if (!students) return [];
+
+        let filtered = students;
+
+        if (statusFilter) {
+            filtered = filtered.filter(student => {
+                const record = attendanceRecords[student.id];
+                return record?.status === statusFilter;
+            });
+        }
+
+        if (searchTerm) {
+            filtered = filtered.filter(student =>
+                student.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        const statusSortOrder: Record<string, number> = { 'Izin': 1, 'Sakit': 1, 'Alpha': 1, 'Hadir': 2, };
+
+        filtered.sort((a, b) => {
+            const recordA = attendanceRecords[a.id];
+            const recordB = attendanceRecords[b.id];
+            const isUnmarkedA = !recordA;
+            const isUnmarkedB = !recordB;
+
+            if (isUnmarkedA && !isUnmarkedB) return -1;
+            if (!isUnmarkedA && isUnmarkedB) return 1;
+            if (isUnmarkedA && isUnmarkedB) return a.name.localeCompare(b.name);
+
+            const orderA = statusSortOrder[recordA!.status] || 99;
+            const orderB = statusSortOrder[recordB!.status] || 99;
+
+            if (orderA !== orderB) return orderA - orderB;
+            return a.name.localeCompare(b.name);
+        });
+
+        return filtered;
+    }, [students, statusFilter, attendanceRecords, searchTerm]);
 
     const markRestAsPresent = () => {
         const updatedRecords = { ...attendanceRecords };
@@ -221,9 +304,9 @@ const AttendancePage: React.FC = () => {
                 .gte('date', thirtyDaysAgo);
             if (error) throw error;
             
-            const systemInstruction = `Anda adalah asisten analisis data untuk guru. Analisis data kehadiran JSON yang diberikan, yang mencakup 30 hari terakhir. Berikan wawasan dalam format JSON yang valid dan sesuai dengan skema. Fokus pada identifikasi siswa dengan kehadiran sempurna, siswa yang sering absen, dan pola absensi yang tidak biasa.`;
+            const systemInstruction = `Anda adalah asisten analisis data untuk guru. Analisis data kehadiran JSON yang diberikan, yang mencakup 30 hari terakhir. Berikan wawasan dalam format JSON yang valid dan sesuai dengan skema. Fokus pada identifikasi siswa dengan kehadiran sempurna, siswa yang sering absen (status 'Alpa'), dan pola absensi yang tidak biasa.`;
             const prompt = `Analisis data kehadiran berikut: ${JSON.stringify(attendanceData)}`;
-            const responseSchema = { type: Type.OBJECT, properties: { perfect_attendance: { type: Type.ARRAY, description: "Nama siswa dengan kehadiran 100% (tidak ada Izin, Sakit, atau Alpha).", items: { type: Type.STRING } }, frequent_absentees: { type: Type.ARRAY, description: "Siswa dengan 3 atau lebih status 'Alpha'.", items: { type: Type.OBJECT, properties: { student_name: { type: Type.STRING }, absent_days: { type: Type.NUMBER } } } }, pattern_warnings: { type: Type.ARRAY, description: "Pola absensi yang tidak biasa atau mengkhawatirkan.", items: { type: Type.OBJECT, properties: { pattern_description: { type: Type.STRING, description: "cth., 'Tingkat absensi (Alpha) tinggi pada hari Senin.'" }, implicated_students: { type: Type.ARRAY, description: "Siswa yang terkait dengan pola ini.", items: { type: Type.STRING } } } } } } };
+            const responseSchema = { type: Type.OBJECT, properties: { perfect_attendance: { type: Type.ARRAY, description: "Nama siswa dengan kehadiran 100% (tidak ada Izin, Sakit, atau Alpa).", items: { type: Type.STRING } }, frequent_absentees: { type: Type.ARRAY, description: "Siswa dengan 3 atau lebih status 'Alpa'.", items: { type: Type.OBJECT, properties: { student_name: { type: Type.STRING }, absent_days: { type: Type.NUMBER } } } }, pattern_warnings: { type: Type.ARRAY, description: "Pola absensi yang tidak biasa atau mengkhawatirkan.", items: { type: Type.OBJECT, properties: { pattern_description: { type: Type.STRING, description: "cth., 'Tingkat absensi (Alpa) tinggi pada hari Senin.'" }, implicated_students: { type: Type.ARRAY, description: "Siswa yang terkait dengan pola ini.", items: { type: Type.STRING } } } } } } };
 
             const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction, responseMimeType: "application/json", responseSchema } });
             setAiAnalysisResult(JSON.parse(response.text ?? ''));
@@ -240,11 +323,26 @@ const AttendancePage: React.FC = () => {
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-blue-500 text-transparent bg-clip-text">Pendataan Absensi</h1>
-                    <p className="mt-1 text-gray-500 dark:text-gray-400">Pilih kelas dan tanggal, lalu kelola kehadiran siswa dengan mudah.</p>
+                    <p className="mt-1 text-gray-500 dark:text-gray-400 font-semibold">{selectedClassName} &middot; {formattedDate}</p>
                 </div>
                 <div className="flex gap-2 self-end md:self-center">
-                    <Button onClick={handleAnalyzeAttendance} variant="outline" disabled={!isOnline}><BrainCircuitIcon className="w-4 h-4 mr-2 text-purple-500"/>Analisis AI</Button>
-                    <Button onClick={() => setIsExportModalOpen(true)} variant="outline" disabled={!isOnline}><DownloadCloudIcon className="w-4 h-4 mr-2"/>Export</Button>
+                    <div className="relative" ref={actionsMenuRef}>
+                        <Button variant="outline" onClick={() => setIsActionsMenuOpen(prev => !prev)}>
+                            Aksi <ChevronDownIcon className="w-4 h-4 ml-2" />
+                        </Button>
+                        {isActionsMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-gray-900 shadow-lg ring-1 ring-black dark:ring-gray-700 ring-opacity-5 focus:outline-none z-10">
+                                <div className="py-1">
+                                    <button onClick={() => { handleAnalyzeAttendance(); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800" disabled={!isOnline}>
+                                        <BrainCircuitIcon className="w-4 h-4 mr-3 text-purple-500"/>Analisis AI
+                                    </button>
+                                    <button onClick={() => { setIsExportModalOpen(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800" disabled={!isOnline}>
+                                        <DownloadCloudIcon className="w-4 h-4 mr-3"/>Export PDF
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
@@ -255,13 +353,14 @@ const AttendancePage: React.FC = () => {
                 </CardContent>
             </Card>
 
-            {/* Summary and Quick Mark Section */}
+            {/* Summary and Filter Section */}
             <div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {statusOptions.map(({ value, label, icon: Icon, color }) => (
                         <Card
                             key={value}
-                            className={`p-3 transition-all border-2 ${quickMarkStatus === value ? `border-blue-500 shadow-lg` : 'dark:border-gray-700'}`}
+                            onClick={() => setStatusFilter(statusFilter === value ? null : value)}
+                            className={`p-3 transition-all border-2 cursor-pointer ${statusFilter === value ? `border-blue-500 shadow-lg` : 'dark:border-gray-700'}`}
                         >
                             <div className="flex items-start justify-between">
                                 <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-${color}-100 dark:bg-gray-800`}>
@@ -272,30 +371,56 @@ const AttendancePage: React.FC = () => {
                             <div className="mt-2">
                                 <p className="text-sm font-medium">{label}</p>
                                 <Button
-                                    variant={quickMarkStatus === value ? "default" : "outline"}
+                                    variant="outline"
                                     size="sm"
-                                    onClick={() => setQuickMarkStatus(quickMarkStatus === value ? null : value)}
+                                    onClick={(e) => { e.stopPropagation(); handleBulkMark(value); }}
                                     className="w-full mt-1 text-xs"
-                                    aria-pressed={quickMarkStatus === value}
                                 >
-                                    {quickMarkStatus === value ? 'Mode Aktif' : `Tandai Cepat`}
+                                    Jadikan Semua {label}
                                 </Button>
                             </div>
                         </Card>
                     ))}
                 </div>
-                {quickMarkStatus && (
-                    <div className="mt-3 text-center p-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30 rounded-lg">
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                            Mode Cepat Aktif: Klik pada siswa untuk menandai sebagai <span className="font-bold">{quickMarkStatus}</span>.
-                        </p>
+                {statusFilter && (
+                    <div className="mt-3 text-center">
+                        <Button variant="ghost" onClick={() => setStatusFilter(null)}>
+                            <XCircleIcon className="w-4 h-4 mr-2" />
+                            Hapus Filter: {statusFilter}
+                        </Button>
                     </div>
                 )}
             </div>
             
-            <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Siswa Belum Diabsen: {unmarkedStudents.length}</p>
-                <Button variant="outline" onClick={markRestAsPresent} disabled={unmarkedStudents.length === 0}>Tandai Sisa Hadir</Button>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {unmarkedStudents.length > 0
+                            ? `${unmarkedStudents.length} siswa belum diabsen.`
+                            : `Menampilkan ${filteredAndSortedStudents.length} dari ${students?.length || 0} siswa.`
+                        }
+                    </p>
+                    {unmarkedStudents.length > 0 && (
+                        <Button variant="outline" onClick={markRestAsPresent}>Tandai Sisa Hadir ({unmarkedStudents.length})</Button>
+                    )}
+                </div>
+                 {unmarkedStudents.length === 0 && students && students.length > 0 && (
+                    <div className="p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg text-center text-sm font-semibold flex items-center justify-center gap-2">
+                        <CheckCircleIcon className="w-5 h-5"/> Semua siswa sudah diabsen
+                    </div>
+                )}
+                <div className="relative">
+                    <Input
+                        type="text"
+                        placeholder="Cari siswa..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                    />
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <SearchIcon className="w-5 h-5 text-gray-400" />
+                    </div>
+                </div>
             </div>
             
             <div className="space-y-3">
@@ -303,7 +428,7 @@ const AttendancePage: React.FC = () => {
                     Array.from({ length: 5 }).map((_, i) => (
                         <div key={i} className="h-16 w-full bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse"></div>
                     ))
-                ) : students?.map(student => {
+                ) : filteredAndSortedStudents?.map(student => {
                     const record = attendanceRecords[student.id];
                     const statusColor = record ? statusOptions.find(o => o.value === record.status)?.color ?? 'gray' : 'gray';
                     const statusColorMap: { [key: string]: string } = {
@@ -391,7 +516,7 @@ const AttendancePage: React.FC = () => {
                 ) : aiAnalysisResult ? (
                     <div className="space-y-4 text-sm max-h-[60vh] overflow-y-auto pr-2">
                         {aiAnalysisResult.perfect_attendance.length > 0 && <div><h4 className="font-bold text-green-600 dark:text-green-400">Kehadiran Sempurna</h4><ul className="list-disc pl-5 mt-1">{aiAnalysisResult.perfect_attendance.map(name => <li key={name}>{name}</li>)}</ul></div>}
-                        {aiAnalysisResult.frequent_absentees.length > 0 && <div><h4 className="font-bold text-red-600 dark:text-red-400">Sering Absen (Alpha)</h4><ul className="list-disc pl-5 mt-1">{aiAnalysisResult.frequent_absentees.map(s => <li key={s.student_name}>{s.student_name} ({s.absent_days} hari)</li>)}</ul></div>}
+                        {aiAnalysisResult.frequent_absentees.length > 0 && <div><h4 className="font-bold text-red-600 dark:text-red-400">Sering Absen (Alpa)</h4><ul className="list-disc pl-5 mt-1">{aiAnalysisResult.frequent_absentees.map(s => <li key={s.student_name}>{s.student_name} ({s.absent_days} hari)</li>)}</ul></div>}
                         {aiAnalysisResult.pattern_warnings.length > 0 && <div><h4 className="font-bold text-yellow-600 dark:text-yellow-400">Pola Terdeteksi</h4><ul className="list-disc pl-5 mt-1">{aiAnalysisResult.pattern_warnings.map(p => <li key={p.pattern_description}>{p.pattern_description} {p.implicated_students.length > 0 && `(Siswa: ${p.implicated_students.join(', ')})`}</li>)}</ul></div>}
                         {(aiAnalysisResult.perfect_attendance.length + aiAnalysisResult.frequent_absentees.length + aiAnalysisResult.pattern_warnings.length) === 0 && <p className="text-center text-gray-500">Tidak ada pola signifikan yang ditemukan dalam 30 hari terakhir.</p>}
                     </div>

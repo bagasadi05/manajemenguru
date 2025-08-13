@@ -95,7 +95,7 @@ const AiDashboardInsight: React.FC<{
 
                     Data Ringkasan:
                     - Total Siswa: ${students.length}
-                    - Absensi Hari Ini (%): Hadir ${attendance.Hadir}, Izin ${attendance.Izin}, Sakit ${attendance.Sakit}, Alpha ${attendance.Alpha}
+                    - Absensi Hari Ini (%): Hadir ${attendance.Hadir}, Izin ${attendance.Izin}, Sakit ${attendance.Sakit}, Alpa ${attendance.Alpha}
 
                     Data Rinci Siswa (30 hari terakhir):
                     ${JSON.stringify(studentDataForPrompt)}
@@ -533,7 +533,7 @@ const DashboardPage: React.FC = () => {
                         <CardContent className="flex-grow flex items-center justify-center p-4">
                             <div className="flex flex-col sm:grid sm:grid-cols-2 items-center gap-4 sm:gap-6 w-full">
                                 <div className="flex justify-center"><DonutChart data={dailyAttendanceSummary} onClick={handleDonutClick} /></div>
-                                <div className="space-y-2 text-sm">{Object.entries(dailyAttendanceSummary).map(([key, value]: [string, any]) => (<div key={key} className="flex items-center justify-between gap-2"><div className="flex items-center"><span className={`w-2 h-2 rounded-full mr-2 ${{Hadir: 'bg-green-500', Izin: 'bg-yellow-500', Sakit: 'bg-blue-500', Alpha: 'bg-red-500'}[key]}`}></span><span className="text-gray-600 dark:text-gray-400">{key}</span></div><span className="font-semibold text-gray-800 dark:text-gray-200">{value}%</span></div>))}</div>
+                                <div className="space-y-2 text-sm">{Object.entries(dailyAttendanceSummary).map(([key, value]: [string, any]) => (<div key={key} className="flex items-center justify-between gap-2"><div className="flex items-center"><span className={`w-2 h-2 rounded-full mr-2 ${{Hadir: 'bg-green-500', Izin: 'bg-yellow-500', Sakit: 'bg-blue-500', Alpha: 'bg-red-500'}[key]}`}></span><span className="text-gray-600 dark:text-gray-400">{key === 'Alpha' ? 'Alpa' : key}</span></div><span className="font-semibold text-gray-800 dark:text-gray-200">{value}%</span></div>))}</div>
                             </div>
                         </CardContent>
                     </Card>

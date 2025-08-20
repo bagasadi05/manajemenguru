@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manajemen Guru</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap" rel="stylesheet">
+
+
+    <!-- Tailwind CSS Config -->
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Tinos', 'serif'],
+            },
+            animation: {
+              'fade-in-up': 'fade-in-up 0.6s ease-out both',
+              'fade-in': 'fade-in 0.5s ease-out both',
+              'shimmer': 'shimmer 4s infinite linear',
+              'slide-down': 'slide-down 1.2s cubic-bezier(0.25, 1, 0.5, 1) both',
+              'slide-up': 'slide-up 1.2s cubic-bezier(0.5, 0, 0.75, 0) both',
+              'float': 'float 4s ease-in-out infinite',
+              // Animations for new login page
+              'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
+              'subtle-pop': 'subtle-pop 0.3s ease-out',
+              // Animation for task board
+              'pulse-border': 'pulse-border 1.5s ease-in-out infinite',
+              'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'holographic-shine': 'holographic-shine 1.2s ease-in-out',
+            },
+            keyframes: {
+              'fade-in-up': {
+                'from': {
+                  opacity: '0',
+                  transform: 'translateY(20px)',
+                },
+                'to': {
+                  opacity: '1',
+                  transform: 'translateY(0)',
+                },
+              },
+              'fade-in': {
+                'from': {
+                  opacity: '0',
+                },
+                'to': {
+                  opacity: '1',
+                },
+              },
+              'shimmer': {
+                '0%': { 'background-position': '200% 0' },
+                '100%': { 'background-position': '-200% 0' },
+              },
+              'slide-down': {
+                'from': { transform: 'translateY(-120%)' },
+                'to': { transform: 'translateY(40px)' },
+              },
+              'slide-up': {
+                'from': { transform: 'translateY(40px)' },
+                'to': { transform: 'translateY(-120%)' },
+              },
+              'float': {
+                '0%, 100%': { transform: 'translateY(40px)' },
+                '50%': { transform: 'translateY(30px)' },
+              },
+              'pulse-glow': {
+                '0%, 100%': { 'box-shadow': '0 0 0 0 rgba(59, 130, 246, 0.4)' },
+                '70%': { 'box-shadow': '0 0 0 10px rgba(59, 130, 246, 0)' }
+              },
+              'subtle-pop': {
+                '0%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.05)' },
+                '100%': { transform: 'scale(1)' }
+              },
+              'pulse-border': {
+                '0%, 100%': { 'border-color': 'rgba(59, 130, 246, 0.4)' },
+                '50%': { 'border-color': 'rgba(59, 130, 246, 1)' }
+              },
+              'holographic-shine': {
+                'from': { transform: 'translateX(-100%) skewX(-30deg)' },
+                'to': { transform: 'translateX(200%) skewX(-30deg)' }
+              },
+            },
+          }
+        }
+      }
+    </script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.4"></script>
+
+    <!-- PWA Manifest & Mobile Meta -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#4f46e5" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Guru PWA" />
+    
+    <style>
+      .animation-delay-100 { animation-delay: 100ms; }
+      .animation-delay-200 { animation-delay: 200ms; }
+      .animation-delay-300 { animation-delay: 300ms; }
+      .animation-delay-400 { animation-delay: 400ms; }
+      .animation-delay-2000 {
+        animation-delay: 2s;
+      }
+      .animation-delay-4000 {
+        animation-delay: 4s;
+      }
+      .text-shadow-md {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+      
+      body.cosmic-bg {
+          min-height: 100vh;
+          background-color: #0a051d;
+          background-image: 
+              radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+              radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+              radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px),
+              radial-gradient(rgba(255,255,255,.4), rgba(255,255,255,.1) 2px, transparent 30px);
+          background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
+          background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
+          animation: bg-move 120s linear infinite;
+          position: relative;
+          transition: background-color 0.5s ease;
+      }
+
+      @keyframes bg-move {
+          from { background-position: 0 0, 40px 60px, 130px 270px, 70px 100px; }
+          to { background-position: 550px 550px, 390px 410px, 380px 520px, 220px 350px; }
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: rgba(139, 92, 246, 0.4); /* purple-500/40 */
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(139, 92, 246, 0.6); /* purple-500/60 */
+      }
+
+
+      /* Styles for Cosmic Login Page */
+      .glass-container {
+          background: rgba(12, 5, 48, 0.4);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          border-radius: 30px;
+          padding: 40px;
+          padding-top: 100px;
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          width: 100%;
+          max-width: 420px;
+          position: relative;
+          z-index: 10;
+          animation: float-form 6s ease-in-out infinite, form-entry 1s ease-out;
+      }
+
+      @keyframes form-entry {
+          from { opacity: 0; transform: translateY(40px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      @keyframes float-form {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+      }
+
+      .holographic-orb-container {
+          position: absolute;
+          top: -80px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 160px;
+          height: 160px;
+          perspective: 1000px;
+          animation: orb-entry 1s ease-out;
+      }
+
+      @keyframes orb-entry {
+          from { opacity: 0; transform: translateX(-50%) scale(0.5) rotate(180deg); }
+          to { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+      }
+
+      .holographic-orb {
+          width: 100%; height: 100%;
+          position: relative;
+          transform-style: preserve-3d;
+          animation: orb-rotate 20s infinite linear;
+      }
+
+      @keyframes orb-rotate {
+          from { transform: rotateY(0deg) rotateX(10deg); }
+          to { transform: rotateY(360deg) rotateX(10deg); }
+      }
+
+      .orb-glow {
+          position: absolute; top: 50%; left: 50%; width: 100%; height: 100%;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle, rgba(0, 246, 255, 0.3) 0%, rgba(0, 246, 255, 0) 60%);
+          border-radius: 50%;
+          animation: pulse-glow 4s infinite ease-in-out;
+          transition: transform 0.4s ease, filter 0.4s ease;
+      }
+
+      .orb-core {
+          position: absolute; top: 50%; left: 50%; width: 60%; height: 60%;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle, #e040fb 0%, #00f6ff 100%);
+          border-radius: 50%;
+          filter: blur(10px);
+          transition: transform 0.4s ease, filter 0.4s ease;
+      }
+
+      .orb-ring {
+          position: absolute; top: 50%; left: 50%; border: 2px solid; border-radius: 50%;
+          transform-style: preserve-3d;
+      }
+
+      .orb-ring-1 {
+          width: 100%; height: 100%;
+          transform: translate(-50%, -50%) rotateX(70deg);
+          border-color: rgba(0, 246, 255, 0.8);
+          animation: ring-spin-1 8s infinite linear reverse;
+      }
+
+      .orb-ring-2 {
+          width: 80%; height: 80%;
+          transform: translate(-50%, -50%) rotateX(-60deg) rotateY(20deg);
+          border-color: rgba(224, 64, 251, 0.8);
+          animation: ring-spin-2 10s infinite linear;
+      }
+
+      @keyframes ring-spin-1 {
+          from { transform: translate(-50%, -50%) rotateZ(0deg) rotateX(70deg); }
+          to { transform: translate(-50%, -50%) rotateZ(360deg) rotateX(70deg); }
+      }
+      @keyframes ring-spin-2 {
+          from { transform: translate(-50%, -50%) rotateZ(0deg) rotateX(-60deg) rotateY(20deg); }
+          to { transform: translate(-50%, -50%) rotateZ(-360deg) rotateX(-60deg) rotateY(20deg); }
+      }
+
+      body[data-focused="true"] .orb-core { transform: translate(-50%, -50%) scale(1.1); filter: blur(15px); }
+      body[data-focused="true"] .orb-glow { animation-duration: 2s; }
+
+      .form-title {
+          color: white; text-align: center; margin-bottom: 10px; font-size: 28px; font-weight: bold;
+      }
+
+      .form-subtitle {
+          color: rgba(255, 255, 255, 0.7); text-align: center; margin-bottom: 40px; font-size: 16px;
+      }
+
+      .form-group-icon {
+          margin-bottom: 25px; position: relative;
+      }
+
+      .form-group-icon .icon {
+          position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+          color: rgba(255, 255, 255, 0.4);
+          transition: color 0.3s ease;
+          pointer-events: none;
+      }
+
+      .form-group-icon input {
+          width: 100%; padding: 15px 15px 15px 50px;
+          border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px;
+          background: rgba(255, 255, 255, 0.1); color: white; font-size: 16px;
+          transition: all 0.3s ease; backdrop-filter: blur(5px);
+      }
+
+      .form-group-icon input::placeholder { color: rgba(255, 255, 255, 0.5); }
+      .form-group-icon input:focus {
+          outline: none; background: rgba(255, 255, 255, 0.2);
+          border-color: rgba(0, 246, 255, 0.5);
+          box-shadow: 0 0 20px rgba(0, 246, 255, 0.2);
+      }
+      .form-group-icon input:focus + .icon { color: #00f6ff; }
+
+      .form-btn {
+          width: 100%; padding: 15px; border: none; border-radius: 10px;
+          background: linear-gradient(135deg, #e040fb, #00f6ff);
+          color: #0a051d; font-size: 18px; font-weight: bold; cursor: pointer;
+          transition: all 0.3s ease; position: relative; overflow: hidden;
+          box-shadow: 0 5px 15px rgba(0, 246, 255, 0.2);
+          animation: pulse-glow 3s infinite;
+      }
+
+      .form-btn:hover:not(:disabled) {
+          transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 246, 255, 0.3);
+      }
+      .form-btn:disabled { cursor: not-allowed; background: gray; animation: none; }
+      .form-btn:active:not(:disabled) { transform: translateY(-1px); }
+
+      .form-links {
+          text-align: center; margin-top: 20px; display: flex;
+          justify-content: space-between; align-items: center;
+      }
+      .form-links a, .form-links button {
+          color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px;
+          transition: color 0.3s ease, text-shadow 0.3s ease; background: none; border: none; cursor: pointer; padding: 0;
+      }
+      .form-links a:hover, .form-links button:hover {
+          color: white; text-shadow: 0 0 5px #00f6ff;
+      }
+
+      @media (max-width: 480px) {
+          .glass-container {
+              margin: 20px;
+              padding: 25px;
+              padding-top: 90px;
+          }
+      }
+      
+      .form-radio {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        display: inline-block;
+        width: 1.25em;
+        height: 1.25em;
+        padding: 0.15em;
+        background-clip: content-box;
+        border: 2px solid #9ca3af;
+        border-radius: 50%;
+        transition: all 0.2s ease-in-out;
+      }
+      .form-radio:checked {
+        border-color: #4f46e5;
+        background-color: #4f46e5;
+      }
+      .dark .form-radio {
+        border-color: #6b7280;
+      }
+      .dark .form-radio:checked {
+        border-color: #818cf8;
+        background-color: #818cf8;
+      }
+      @media print {
+        html, body {
+          background-color: #fff !important;
+          color: #000 !important;
+          font-family: Tinos, serif !important;
+        }
+        .print\:hidden {
+          display: none !important;
+        }
+        #report-card {
+          box-shadow: none !important;
+          margin: 0 !important;
+          border: none !important;
+          break-inside: avoid;
+        }
+        #report-card input,
+        #report-card textarea,
+        #report-card [contenteditable="true"] {
+          border: 1px solid transparent !important;
+          background-color: transparent !important;
+          box-shadow: none !important;
+          appearance: none !important;
+          -webkit-appearance: none !important;
+          -moz-appearance: none !important;
+          padding: 2px 1px !important;
+          margin: 0 !important;
+          width: 100%;
+          font-family: inherit !important;
+          font-size: inherit !important;
+          color: black !important;
+          line-height: 1.4;
+        }
+        #report-card textarea {
+          resize: none !important;
+          overflow: visible !important;
+          display: block;
+          height: auto !important;
+          min-height: 20px !important;
+        }
+        #report-card [contenteditable="true"]:focus,
+        #report-card input:focus,
+        #report-card textarea:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        tr, section {
+          break-inside: avoid !important;
+        }
+        thead {
+          display: table-header-group !important;
+        }
+      }
+      @page {
+        size: A4;
+        margin: 20mm;
+      }
+      .holographic-shine-hover:hover::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 40px;
+        height: 100%;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0) 100%);
+        animation: holographic-shine 1.2s ease-in-out;
+        opacity: 0.9;
+        filter: blur(5px);
+      }
+    </style>
+    <script>
+      // Theme management script to prevent flash of wrong theme
+      if (localStorage.getItem('theme') === 'dark' || (!('theme'in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('cosmic-bg');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('cosmic-bg');
+      }
+    </script>
+</head>
+  <body class="bg-gray-100 dark:bg-gray-950 font-sans">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
